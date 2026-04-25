@@ -1596,14 +1596,94 @@ pub async fn get_available_jobs(State(state): State<AppState>) -> Result<Json<Ve
     Ok(Json(vec![]))
 }
 
-pub async fn apply_for_job(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
-    state.state_manager
-        .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())
-        .map(Json)
+pub async fn apply_for_job(State(_state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
+    Err("Job application not implemented".to_string())
 }
 
-// Health check endpoint
+// ============================================================================
+// Youth Academy Handlers
+// ============================================================================
+
+pub async fn get_youth_recommendations(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<Value>>, String> {
+    let game = state.state_manager
+        .get_game(|g| g.clone())
+        .ok_or("No game in progress")?;
+    
+    let recommendations = ofm_core::youth_academy::get_current_recommendations(&game);
+    
+    let result: Vec<Value> = recommendations.iter().map(|r| {
+        let player = &r.player;
+        serde_json::json!({
+            "id": r.id,
+            "playerId": player.id.clone(),
+            "fullName": player.full_name.clone(),
+            "matchName": player.match_name.clone(),
+            "position": format!("{:?}", player.position),
+            "age": calculate_age(&player.date_of_birth),
+            "overallRating": calculate_player_ovr(player),
+            "potentialRating": calculate_player_ovr(player) + 10, // Youth players have growth potential
+            "recruitmentCost": r.recruitment_cost,
+            "expiresAt": r.expires_at,
+            "facilityBonus": r.facility_bonus,
+        })
+    }).collect();
+    
+    Ok(Json(result))
+}
+
+pub async fn recruit_youth_player(
+    State(state): State<AppState>,
+    Json(params): Json<Value>,
+) -> Result<Json<Value>, String> {
+    let recommendation_id = params.get("recommendationId")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing recommendationId")?;
+
+    let mut game = state.state_manager
+        .get_game(|g| g.clone())
+        .ok_or("No active game session".to_string())?;
+
+    let result = ofm_core::youth_academy::recruit_youth_player(&mut game, recommendation_id)
+        .map_err(|e| e.to_string())?;
+
+    state.state_manager.set_game(game);
+    Ok(Json(serde_json::json!({
+        "success": true,
+        "player": {
+            "id": result.id,
+            "fullName": result.full_name,
+        }
+    })))
+}
+
+fn calculate_age(dob: &str) -> u32 {
+    use chrono::NaiveDate;
+    if let Ok(birth) = NaiveDate::parse_from_str(dob, "%Y-%m-%d") {
+        let today = chrono::Utc::now().date_naive();
+        let years = today.signed_duration_since(birth).num_days() / 365;
+        years as u32
+    } else {
+        20
+    }
+}
+
+fn calculate_player_ovr(player: &domain::player::Player) -> u8 {
+    let attrs = &player.attributes;
+    ((attrs.pace as u32
+        + attrs.stamina as u32
+        + attrs.strength as u32
+        + attrs.passing as u32
+        + attrs.shooting as u32
+        + attrs.tackling as u32
+        + attrs.dribbling as u32
+        + attrs.defending as u32
+        + attrs.positioning as u32
+        + attrs.vision as u32
+        + attrs.decisions as u32) / 11) as u8
+}
+
 pub async fn health_check() -> &'static str {
     "OK"
 }

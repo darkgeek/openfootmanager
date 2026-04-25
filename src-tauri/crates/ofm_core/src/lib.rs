@@ -26,3 +26,4 @@ pub mod state;
 pub mod training;
 pub mod transfers;
 pub mod turn;
+pub mod youth_academy;

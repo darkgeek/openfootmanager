@@ -8,6 +8,8 @@ use domain::season::SeasonContext;
 use domain::staff::Staff;
 use domain::team::Team;
 
+use crate::youth_academy::YouthRecommendation;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,6 +55,8 @@ pub struct Game {
     pub season_context: SeasonContext,
     #[serde(default)]
     pub days_since_last_job_offer: Option<u32>,
+    #[serde(default)]
+    pub youth_recommendations: Vec<YouthRecommendation>,
 }
 
 impl Game {
@@ -77,6 +81,7 @@ impl Game {
             board_objectives: vec![],
             season_context: SeasonContext::default(),
             days_since_last_job_offer: None,
+            youth_recommendations: vec![],
         };
         crate::football_identity::upgrade_game_football_identities(&mut game);
         crate::season_context::refresh_game_context(&mut game);

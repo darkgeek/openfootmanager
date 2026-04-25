@@ -225,6 +225,7 @@ pub struct Facilities {
     pub training: u8,
     pub medical: u8,
     pub scouting: u8,
+    pub youth: u8,
 }
 
 impl Default for Facilities {
@@ -233,6 +234,7 @@ impl Default for Facilities {
             training: 1,
             medical: 1,
             scouting: 1,
+            youth: 1,
         }
     }
 }

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { GameStateData, PlayerData } from "../../store/gameStore";
 import {
   Card,
@@ -6,17 +7,34 @@ import {
   Badge,
   ProgressBar,
   CountryFlag,
+  Button,
 } from "../ui";
 import { calcOvr, calcAge, positionBadgeVariant } from "../../lib/helpers";
 import { TraitList } from "../TraitBadge";
 import { useTranslation } from "react-i18next";
 import { countryName } from "../../lib/countries";
 import { translatePositionAbbreviation } from "../squad/SquadTab.helpers";
-import { GraduationCap, TrendingUp, Star, Users, Sparkles } from "lucide-react";
+import { GraduationCap, TrendingUp, Star, Users, Sparkles, Gift, DollarSign, RefreshCw } from "lucide-react";
+import { invoke } from "../../lib/api";
 
 interface YouthAcademyTabProps {
   gameState: GameStateData;
   onSelectPlayer?: (id: string) => void;
+  onRefreshGameState?: () => void;
+}
+
+interface YouthRecommendation {
+  id: string;
+  playerId: string;
+  fullName: string;
+  matchName: string;
+  position: string;
+  age: number;
+  overallRating: number;
+  potentialRating: number;
+  recruitmentCost: number;
+  expiresAt: string;
+  facilityBonus: number;
 }
 
 // Estimate potential: younger players with good attributes have higher ceiling
@@ -44,11 +62,22 @@ function getPotentialLabel(
   return { label: t("youthAcademy.potLimited"), color: "text-gray-500" };
 }
 
+function formatCurrency(amount: number): string {
+  if (amount >= 1000000) return `€${(amount / 1000000).toFixed(1)}M`;
+  if (amount >= 1000) return `€${(amount / 1000).toFixed(0)}K`;
+  return `€${amount}`;
+}
+
 export default function YouthAcademyTab({
   gameState,
   onSelectPlayer,
+  onRefreshGameState,
 }: YouthAcademyTabProps) {
   const { t, i18n } = useTranslation();
+  const [recommendations, setRecommendations] = useState<YouthRecommendation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRecruiting, setIsRecruiting] = useState<string | null>(null);
+
   const myTeam = gameState.teams.find(
     (tm) => tm.id === gameState.manager.team_id,
   );
@@ -85,6 +114,41 @@ export default function YouthAcademyTab({
   const youthCoach = gameState.staff.filter(
     (s) => s.team_id === myTeam?.id && s.specialization === "Youth",
   );
+
+  // Fetch recommendations
+  useEffect(() => {
+    async function fetchRecommendations() {
+      try {
+        setIsLoading(true);
+        const recs = await invoke<YouthRecommendation[]>("get_youth_recommendations", {});
+        setRecommendations(recs || []);
+      } catch (error) {
+        console.error("Failed to fetch recommendations:", error);
+        setRecommendations([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchRecommendations();
+  }, []);
+
+  // Handle recruit
+  const handleRecruit = async (recommendationId: string) => {
+    try {
+      setIsRecruiting(recommendationId);
+      await invoke("recruit_youth_player", { recommendationId });
+      // Refresh recommendations and game state
+      const recs = await invoke<YouthRecommendation[]>("get_youth_recommendations", {});
+      setRecommendations(recs || []);
+      // Notify parent to refresh game state
+      onRefreshGameState?.();
+    } catch (error) {
+      console.error("Failed to recruit player:", error);
+      alert(`Failed to recruit: ${error}`);
+    } finally {
+      setIsRecruiting(null);
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto flex flex-col gap-5">
@@ -173,6 +237,108 @@ export default function YouthAcademyTab({
           </CardBody>
         </Card>
       )}
+
+      {/* Youth Recruitment Panel */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Gift className="w-4 h-4 text-accent-500" />
+            <span>{t("youthAcademy.monthlyRecommendations") || "Monthly Recommendations"}</span>
+          </div>
+        </CardHeader>
+        <CardBody>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="w-5 h-5 text-gray-400 animate-spin" />
+              <span className="ml-2 text-gray-500">Loading recommendations...</span>
+            </div>
+          ) : recommendations.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <Users className="w-10 h-10 text-gray-300 dark:text-navy-600" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t("youthAcademy.noRecommendations") || "No recommendations this month"}
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                {t("youthAcademy.checkNextMonth") || "Check again at the start of next month"}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recommendations.map((rec) => {
+                const growthRoom = rec.potentialRating - rec.overallRating;
+                const canAfford = myTeam && myTeam.finance >= rec.recruitmentCost;
+                
+                return (
+                  <div
+                    key={rec.id}
+                    className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-navy-800 rounded-lg"
+                  >
+                    {/* Player Info */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-800 dark:text-gray-200">
+                          {rec.fullName}
+                        </p>
+                        <Badge
+                          variant={positionBadgeVariant(rec.position)}
+                          size="sm"
+                        >
+                          {translatePositionAbbreviation(t, rec.position)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                        <span>{rec.age} years old</span>
+                        <span>OVR: {rec.overallRating}</span>
+                        <span className="text-green-500">Potential: {rec.potentialRating}</span>
+                      </div>
+                    </div>
+
+                    {/* Growth Progress */}
+                    <div className="w-32">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-gray-500">Growth</span>
+                        <span className="text-green-500 font-medium">+{growthRoom}</span>
+                      </div>
+                      <ProgressBar
+                        value={(rec.overallRating / rec.potentialRating) * 100}
+                        variant="accent"
+                        size="sm"
+                      />
+                    </div>
+
+                    {/* Cost */}
+                    <div className="text-right">
+                      <div className="flex items-center gap-1 text-sm">
+                        <DollarSign className="w-3 h-3 text-gray-400" />
+                        <span className={canAfford ? "text-gray-700 dark:text-gray-300" : "text-red-500"}>
+                          {formatCurrency(rec.recruitmentCost)}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-gray-400">
+                        Expires: {rec.expiresAt}
+                      </p>
+                    </div>
+
+                    {/* Recruit Button */}
+                    <Button
+                      size="sm"
+                      variant="accent"
+                      disabled={!canAfford || isRecruiting === rec.id}
+                      onClick={() => handleRecruit(rec.id)}
+                    >
+                      {isRecruiting === rec.id ? (
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                      ) : (
+                        t("youthAcademy.recruit") || "Recruit"
+                      )}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       {/* Youth Players Table */}
       <Card>

@@ -129,6 +129,10 @@ pub async fn start_server(port: u16) -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/get_available_jobs", post(get_available_jobs))
         .route("/api/apply_for_job", post(apply_for_job))
         
+        // Youth Academy
+        .route("/api/get_youth_recommendations", post(get_youth_recommendations))
+        .route("/api/recruit_youth_player", post(recruit_youth_player))
+        
         // Health check
         .route("/api/health", get(health_check))
         
