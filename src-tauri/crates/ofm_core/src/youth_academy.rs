@@ -25,7 +25,11 @@ pub fn generate_monthly_recommendations(game: &mut Game) {
     let current_month = game.clock.current_date.format("%Y-%m").to_string();
     
     // Check if we already have recommendations for this month
-    if game.youth_recommendations.iter().any(|r| r.id.starts_with(&current_month)) {
+    // The recommendation ID contains the month it was generated in
+    if game.youth_recommendations.iter().any(|r| {
+        // Extract month from ID (format: "2026-08_0_uuid")
+        r.id.split('_').next().map_or(false, |m| m == current_month)
+    }) {
         return; // Already generated this month
     }
     

@@ -114,6 +114,14 @@ pub fn finish_live_match_day(game: &mut Game) {
     random_events::check_random_events(game);
     scouting::process_scouting(game);
     transfers::generate_incoming_transfer_offers(game);
+
+    // Youth academy: generate monthly recommendations on the 1st of each month
+    if game.clock.current_date.day() == 1 {
+        crate::youth_academy::generate_monthly_recommendations(game);
+    }
+    // Clean up expired recommendations
+    crate::youth_academy::cleanup_expired_recommendations(game);
+
     news::generate_weekly_digest_news(game, &today);
     news::generate_pre_match_messages(game, &today);
 
