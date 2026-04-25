@@ -1,6 +1,4 @@
-@import "tailwindcss";
-
-/* Bundled fonts (offline) */
+/* Bundled fonts (offline) - must be first */
 @import "@fontsource/inter/300.css";
 @import "@fontsource/inter/400.css";
 @import "@fontsource/inter/500.css";
@@ -13,52 +11,17 @@
 @import "@fontsource/barlow-condensed/700.css";
 @import "@fontsource/barlow-condensed/800.css";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
-@theme {
-  /* Typography */
-  --font-sans: "Inter", "Avenir", "Helvetica", "Arial", sans-serif;
-  --font-heading: "Barlow Condensed", "Inter", "Arial Narrow", sans-serif;
-
-  /* Primary: Emerald Green */
-  --color-primary-50: #ecfdf5;
-  --color-primary-100: #d1fae5;
-  --color-primary-200: #a7f3d0;
-  --color-primary-300: #6ee7b7;
-  --color-primary-400: #34d399;
-  --color-primary-500: #10b981;
-  --color-primary-600: #059669;
-  --color-primary-700: #047857;
-  --color-primary-800: #065f46;
-  --color-primary-900: #064e3b;
-
-  /* Accent: Gold */
-  --color-accent-50: #fffbeb;
-  --color-accent-100: #fef3c7;
-  --color-accent-200: #fde68a;
-  --color-accent-300: #fcd34d;
-  --color-accent-400: #ffd60a;
-  --color-accent-500: #eab308;
-  --color-accent-600: #b8960a;
-  --color-accent-700: #a16207;
-  --color-accent-800: #854d0e;
-  --color-accent-900: #713f12;
-
-  /* Success: Green */
-  --color-success-400: #06d6a0;
-  --color-success-500: #05a87d;
-  --color-success-600: #059669;
-
-  /* Navy (dark mode backgrounds) */
-  --color-navy-900: #0a1128;
-  --color-navy-800: #131b33;
-  --color-navy-700: #1a2340;
-  --color-navy-600: #243054;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   body {
-    @apply bg-gray-100 text-navy-900 antialiased dark:bg-navy-900 dark:text-gray-100 transition-colors duration-300;
+    @apply bg-gray-100 text-gray-900 antialiased transition-colors duration-300;
+  }
+
+  body.dark {
+    @apply bg-gray-900 text-gray-100;
   }
 
   h1,
@@ -67,14 +30,96 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-heading);
+    @apply font-heading;
   }
 }
 
 @layer utilities {
   .font-heading {
-    font-family: var(--font-heading);
+    font-family: "Barlow Condensed", "Inter", "Arial Narrow", sans-serif;
   }
+
+  .text-primary-50 { color: #ecfdf5; }
+  .text-primary-100 { color: #d1fae5; }
+  .text-primary-200 { color: #a7f3d0; }
+  .text-primary-300 { color: #6ee7b7; }
+  .text-primary-400 { color: #34d399; }
+  .text-primary-500 { color: #10b981; }
+  .text-primary-600 { color: #059669; }
+  .text-primary-700 { color: #047857; }
+  .text-primary-800 { color: #065f46; }
+  .text-primary-900 { color: #064e3b; }
+
+  .text-accent-50 { color: #fffbeb; }
+  .text-accent-100 { color: #fef3c7; }
+  .text-accent-200 { color: #fde68a; }
+  .text-accent-300 { color: #fcd34d; }
+  .text-accent-400 { color: #ffd60a; }
+  .text-accent-500 { color: #eab308; }
+  .text-accent-600 { color: #b8960a; }
+  .text-accent-700 { color: #a16207; }
+  .text-accent-800 { color: #854d0e; }
+  .text-accent-900 { color: #713f12; }
+
+  .text-success-400 { color: #06d6a0; }
+  .text-success-500 { color: #05a87d; }
+  .text-success-600 { color: #059669; }
+
+  .bg-primary-50 { background-color: #ecfdf5; }
+  .bg-primary-100 { background-color: #d1fae5; }
+  .bg-primary-200 { background-color: #a7f3d0; }
+  .bg-primary-300 { background-color: #6ee7b7; }
+  .bg-primary-400 { background-color: #34d399; }
+  .bg-primary-500 { background-color: #10b981; }
+  .bg-primary-600 { background-color: #059669; }
+  .bg-primary-700 { background-color: #047857; }
+  .bg-primary-800 { background-color: #065f46; }
+  .bg-primary-900 { background-color: #064e3b; }
+
+  .bg-accent-50 { background-color: #fffbeb; }
+  .bg-accent-100 { background-color: #fef3c7; }
+  .bg-accent-200 { background-color: #fde68a; }
+  .bg-accent-300 { background-color: #fcd34d; }
+  .bg-accent-400 { background-color: #ffd60a; }
+  .bg-accent-500 { background-color: #eab308; }
+  .bg-accent-600 { background-color: #b8960a; }
+  .bg-accent-700 { background-color: #a16207; }
+  .bg-accent-800 { background-color: #854d0e; }
+  .bg-accent-900 { background-color: #713f12; }
+
+  .bg-success-400 { background-color: #06d6a0; }
+  .bg-success-500 { background-color: #05a87d; }
+  .bg-success-600 { background-color: #059669; }
+
+  .bg-navy-900 { background-color: #0a1128; }
+  .bg-navy-800 { background-color: #131b33; }
+  .bg-navy-700 { background-color: #1a2340; }
+  .bg-navy-600 { background-color: #243054; }
+  .bg-navy-500 { background-color: #2d3f6b; }
+  .bg-navy-400 { background-color: #3a5080; }
+  .bg-navy-300 { background-color: #4a6599; }
+  .bg-navy-200 { background-color: #5f7fb8; }
+  .bg-navy-100 { background-color: #7a9ad1; }
+
+  .text-navy-900 { color: #0a1128; }
+  .text-navy-800 { color: #131b33; }
+  .text-navy-700 { color: #1a2340; }
+  .text-navy-600 { color: #243054; }
+  .text-navy-500 { color: #2d3f6b; }
+  .text-navy-400 { color: #3a5080; }
+  .text-navy-300 { color: #4a6599; }
+  .text-navy-200 { color: #5f7fb8; }
+  .text-navy-100 { color: #7a9ad1; }
+
+  .border-navy-900 { border-color: #0a1128; }
+  .border-navy-800 { border-color: #131b33; }
+  .border-navy-700 { border-color: #1a2340; }
+  .border-navy-600 { border-color: #243054; }
+  .border-navy-500 { border-color: #2d3f6b; }
+  .border-navy-400 { border-color: #3a5080; }
+  .border-navy-300 { border-color: #4a6599; }
+  .border-navy-200 { border-color: #5f7fb8; }
+  .border-navy-100 { border-color: #7a9ad1; }
 
   .scrollbar-thin {
     scrollbar-width: thin;
@@ -86,7 +131,7 @@
     background: transparent;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: var(--color-navy-600);
+    background-color: #243054;
     border-radius: 9999px;
   }
 }
@@ -96,7 +141,7 @@
   color-scheme: dark;
 }
 .dark select option {
-  background-color: var(--color-navy-700);
+  background-color: #1a2340;
   color: #e2e8f0;
 }
 

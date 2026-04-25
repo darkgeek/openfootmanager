@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import { useNavigate } from "react-router-dom";
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { invoke } from "../lib/tauri";
+import { getCurrentWindow } from "../lib/tauri-polyfill";
 import type { MatchModeType } from "../hooks/useAdvanceTime";
 import { useGameStore } from "../store/gameStore";
 import type { GameStateData, PlayerSelectionOptions } from "../store/gameStore";
@@ -222,16 +222,22 @@ export default function Dashboard(): JSX.Element {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const isClosingRef = useRef(false);
   useEffect(() => {
-    const appWindow = getCurrentWindow();
-    const unlisten = appWindow.onCloseRequested(async (event) => {
-      if (isClosingRef.current) return;
-      if (isDirty) {
-        event.preventDefault();
-        setShowCloseConfirm(true);
-      }
+    let isMounted = true;
+    getCurrentWindow().then((appWindow) => {
+      if (!isMounted) return;
+      const unlisten = appWindow.onCloseRequested(async (event) => {
+        if (isClosingRef.current) return;
+        if (isDirty) {
+          event.preventDefault();
+          setShowCloseConfirm(true);
+        }
+      });
+      return () => {
+        unlisten.then((fn) => fn());
+      };
     });
     return () => {
-      unlisten.then((fn) => fn());
+      isMounted = false;
     };
   }, [isDirty]);
 
@@ -246,7 +252,8 @@ export default function Dashboard(): JSX.Element {
         console.error("Auto-save on close failed:", err);
       }
     }
-    await getCurrentWindow().destroy();
+    const window = await getCurrentWindow();
+    await window.destroy();
   };
 
   const MODE_META: Record<MatchModeType, DashboardMatchModeMeta> = {

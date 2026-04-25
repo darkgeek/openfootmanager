@@ -1,6 +1,6 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
+import path from "path";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -38,44 +38,84 @@ function manualChunks(id: string): string | undefined {
 }
 
 // https://vite.dev/config/
-export default defineConfig(async () => ({
-  plugins: [react(), tailwindcss()],
-  test: {
-    environment: "jsdom",
-    globals: true,
-    include: ["src/**/*.test.{ts,tsx}"],
-    setupFiles: ["src/test-setup.ts"],
-    coverage: {
-      exclude: ["src/i18n/locales/**", "src/**/*.test.{ts,tsx}", "src/test-setup.ts"],
-    },
-  },
+export default defineConfig(async ({ mode }) => {
+  // Load env variables for the current mode
+  const env = loadEnv(mode, process.cwd(), '');
+  const isWebMode = mode === 'web';
 
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent Vite from obscuring rust errors
-  clearScreen: false,
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks,
+  return {
+    plugins: [react()],
+    test: {
+      environment: "jsdom",
+      globals: true,
+      include: ["src/**/*.test.{ts,tsx}"],
+      setupFiles: ["src/test-setup.ts"],
+      coverage: {
+        exclude: ["src/i18n/locales/**", "src/**/*.test.{ts,tsx}", "src/test-setup.ts"],
       },
     },
-  },
-  // 2. tauri expects a fixed port, fail if that port is not available
-  server: {
-    port: 1420,
-    strictPort: true,
-    host: host || false,
-    hmr: host
-      ? {
-          protocol: "ws",
-          host,
-          port: 1421,
-        }
-      : undefined,
-    watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
+
+    // Mode-specific configuration
+    ...(isWebMode ? {
+      // Web mode: serve from dist folder with API proxy
+      server: {
+        port: 5173,
+        host: true, // Bind to all network interfaces for remote access
+        proxy: {
+          '/api': {
+            target: 'http://localhost:3001',
+            changeOrigin: true,
+          },
+        },
+      },
+      build: {
+        outDir: 'dist-web',
+        rollupOptions: {
+          output: {
+            manualChunks,
+          },
+        },
+      },
+    } : {
+      // Tauri mode: default Vite options
+      clearScreen: false,
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks,
+          },
+        },
+      },
+      server: {
+        port: 1420,
+        strictPort: true,
+        host: host || false,
+        hmr: host
+          ? {
+              protocol: "ws",
+              host,
+              port: 1421,
+            }
+          : undefined,
+        watch: {
+          ignored: ["**/src-tauri/**"],
+        },
+      },
+    }),
+
+    // Define environment variables for web mode
+    define: {
+      'import.meta.env.VITE_WEB_MODE': JSON.stringify(isWebMode ? 'true' : 'false'),
+      'import.meta.env.VITE_API_BASE': JSON.stringify(env.VITE_API_BASE || ''),
     },
-  },
-}));
+
+    // Resolve aliases for different modes
+    resolve: {
+      alias: {
+        '@tauri-apps/api/core': isWebMode 
+          ? path.resolve(__dirname, 'src/lib/api.ts')
+          : '@tauri-apps/api/core',
+      },
+    },
+  };
+});

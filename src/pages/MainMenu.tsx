@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { invoke } from "../lib/tauri";
+import { getCurrentWindow } from "../lib/tauri-polyfill";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useGameStore, GameStateData } from "../store/gameStore";
@@ -333,29 +333,17 @@ export default function MainMenu() {
     try {
       // Determine world source
       let worldSource: string | undefined = selectedWorldId;
+      let worldJson: string | undefined;
+      
       if (selectedWorldId === "random") {
         worldSource = undefined;
       } else if (
         selectedWorldId.startsWith("file:") &&
         sessionStorage.getItem("imported_world_json")
       ) {
-        // For imported files, write to a temp location first
-        const json = sessionStorage.getItem("imported_world_json")!;
-        // Write it via a temp file approach — just pass "random" and override
-        // Actually, better to write the file to user databases dir first
-        const path = await invoke<string>("write_temp_database", {
-          json,
-        }).catch(() => null);
-        if (path) {
-          worldSource = `file:${path}`;
-        } else {
-          // Fallback: pass the imported data inline — won't work with current backend
-          // So fall back to random
-          worldSource = undefined;
-          console.warn(
-            "Could not write imported database, falling back to random",
-          );
-        }
+        // For imported files, pass the JSON directly
+        worldJson = sessionStorage.getItem("imported_world_json")!;
+        worldSource = undefined;
       }
 
       const game = await invoke<GameStateData>("start_new_game", {
@@ -364,6 +352,7 @@ export default function MainMenu() {
         dob: formData.dob,
         nationality: formData.nationality,
         worldSource,
+        worldJson,
       });
       sessionStorage.removeItem("imported_world_json");
       setGameState(game);
@@ -416,7 +405,8 @@ export default function MainMenu() {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
       }
-      await getCurrentWindow().destroy();
+      const window = await getCurrentWindow();
+      await window.destroy();
     } catch (error) {
       console.error("Failed to exit app:", error);
     }

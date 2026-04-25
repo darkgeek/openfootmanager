@@ -607,14 +607,14 @@ function AwardCard({
   icon,
   title,
   subtitle,
-  entries,
+  entries = [],
   unit,
   decimal,
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle: string;
-  entries: AwardEntry[];
+  entries?: AwardEntry[];
   unit: string;
   decimal?: boolean;
 }) {
@@ -632,7 +632,7 @@ function AwardCard({
         </div>
       </CardHeader>
       <CardBody className="p-0">
-        {entries.length === 0 ? (
+        {!entries || entries.length === 0 ? (
           <p className="p-4 text-sm text-gray-400 dark:text-gray-500 text-center">
             No data yet
           </p>
