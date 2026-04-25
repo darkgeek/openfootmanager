@@ -2,6 +2,7 @@
 //! Direct implementations of game logic for HTTP API access
 
 use axum::{extract::State, Json};
+use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -328,6 +329,12 @@ pub async fn select_team(
     game.league = Some(league);
     refresh_game_context(&mut game);
 
+    // Generate youth recommendations if it's the first day of a new month
+    if game.clock.current_date.date_naive().day() == 1 {
+        ofm_core::youth_academy::generate_monthly_recommendations(&mut game);
+    }
+    ofm_core::youth_academy::cleanup_expired_recommendations(&mut game);
+
     let date_str = game.clock.current_date.to_rfc3339();
     let welcome_msg = messages::welcome_message(&team_name, &team_id, &date_str);
     game.messages.push(welcome_msg);
@@ -369,6 +376,12 @@ pub async fn load_game(
     let stats_state = sm.load_stats_state(&params.save_id)
         .map_err(|e| e.to_string())?;
     refresh_game_context(&mut game);
+
+    // Generate youth recommendations if it's the first day of a new month
+    if game.clock.current_date.date_naive().day() == 1 {
+        ofm_core::youth_academy::generate_monthly_recommendations(&mut game);
+    }
+    ofm_core::youth_academy::cleanup_expired_recommendations(&mut game);
 
     let mgr_name = format!("{} {}", game.manager.first_name, game.manager.last_name);
 

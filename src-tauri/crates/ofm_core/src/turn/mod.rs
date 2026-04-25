@@ -80,7 +80,7 @@ where
     transfers::generate_incoming_transfer_offers(game);
 
     // Youth academy: generate monthly recommendations on the 1st of each month
-    if game.clock.current_date.day() == 1 {
+    if game.clock.current_date.date_naive().day() == 1 {
         crate::youth_academy::generate_monthly_recommendations(game);
     }
     // Clean up expired recommendations
@@ -116,7 +116,7 @@ pub fn finish_live_match_day(game: &mut Game) {
     transfers::generate_incoming_transfer_offers(game);
 
     // Youth academy: generate monthly recommendations on the 1st of each month
-    if game.clock.current_date.day() == 1 {
+    if game.clock.current_date.date_naive().day() == 1 {
         crate::youth_academy::generate_monthly_recommendations(game);
     }
     // Clean up expired recommendations
