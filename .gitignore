@@ -32,3 +32,5 @@ coverage/
 
 # Claude local settings
 .claude/settings.local.json
+# Build artifacts
+dist-web/
