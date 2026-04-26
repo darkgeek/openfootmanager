@@ -124,6 +124,10 @@ pub fn generate_monthly_training_report(game: &mut Game) {
     let current_date = game.clock.current_date.format("%Y-%m-%d").to_string();
     let current_month = game.clock.current_date.format("%Y-%m").to_string();
 
+    log::info!("[training_report] Processing for team {} on {} (month: {})", 
+        user_team_id, current_date, current_month);
+    log::info!("[training_report] Current snapshots count: {}", game.training_snapshots.len());
+
     // Collect player data before any mutable borrow
     let team_player_ids: Vec<String> = game.players.iter()
         .filter(|p| p.team_id.as_deref() == Some(&user_team_id))
@@ -131,6 +135,7 @@ pub fn generate_monthly_training_report(game: &mut Game) {
         .collect();
 
     if team_player_ids.is_empty() {
+        log::info!("[training_report] No players found for team {}", user_team_id);
         return;
     }
 
@@ -144,13 +149,18 @@ pub fn generate_monthly_training_report(game: &mut Game) {
             let last_month = game.training_snapshots[idx].recorded_date.clone();
             let snapshot = &game.training_snapshots[idx];
             
+            log::info!("[training_report] Found existing snapshot from {} with {} players", 
+                last_month, snapshot.players.len());
+            
             // Check if we already have a snapshot for this month
             if snapshot.recorded_date.starts_with(&current_month) {
+                log::info!("[training_report] Already have snapshot for this month, skipping");
                 return; // Already generated this month
             }
 
             // Calculate changes using player IDs and snapshot
             let changes = calculate_changes_for_team(&team_player_ids, &game.players, snapshot);
+            log::info!("[training_report] Calculated {} changes", changes.len());
 
             // Generate report message
             generate_report_message(game, &changes, &current_date, &last_month);
@@ -169,8 +179,8 @@ pub fn generate_monthly_training_report(game: &mut Game) {
         }
         None => {
             // First time - create new snapshot (no report for first month)
-            log::info!("[training_report] Creating first snapshot for team {} on {}", 
-                user_team_id, current_date);
+            log::info!("[training_report] Creating first snapshot for team {} on {} with {} players", 
+                user_team_id, current_date, team_player_ids.len());
             let snapshot_data: Vec<PlayerAttributeSnapshot> = game.players.iter()
                 .filter(|p| p.team_id.as_deref() == Some(&user_team_id))
                 .map(|p| PlayerAttributeSnapshot::from_player(p))
