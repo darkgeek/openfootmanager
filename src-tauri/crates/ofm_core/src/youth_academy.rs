@@ -122,9 +122,8 @@ fn generate_youth_player(
     let position = positions[rng.random_range(0..positions.len())].clone();
     
     // Generate name based on country
-    let (first_name, last_name) = generate_name(country, rng);
-    let full_name = format!("{} {}", first_name, last_name);
-    let match_name = last_name.clone();
+    let (_surname, full_name) = generate_name(country, rng);
+    let match_name = full_name.clone();
     
     // Calculate birth date
     let birth_year = 2026 - age as u32;
@@ -218,16 +217,185 @@ fn generate_attributes(
     }
 }
 
+/// Generate a random Chinese name (surname + given name)
+/// Returns (surname, full_name) where full_name is surname + given_name
+/// ~5% of names are from minority ethnicities
+fn generate_chinese_name(rng: &mut impl Rng) -> (String, String) {
+    // 5% chance for minority ethnic name
+    if rng.random_range(0..20) == 0 {
+        return generate_minority_name(rng);
+    }
+    
+    // Common Chinese surnames (ordered by popularity)
+    let surnames = [
+        "王", "李", "张", "刘", "陈", "杨", "赵", "黄", "周", "吴",
+        "徐", "孙", "马", "朱", "胡", "郭", "何", "高", "林", "罗",
+        "郑", "梁", "谢", "宋", "唐", "许", "韩", "冯", "邓", "曹",
+        "彭", "曾", "肖", "田", "董", "袁", "潘", "于", "蒋", "蔡",
+    ];
+    
+    // Common single-character given names (male)
+    let single_char_names = [
+        "伟", "强", "磊", "浩", "杰", "鹏", "飞", "超", "龙", "凯",
+        "文", "勇", "波", "峰", "华", "刚", "洋", "军", "涛", "明",
+        "东", "雷", "宇", "晨", "辉", "松", "健", "斌", "威", "海",
+        "川", "博", "然", "程", "思", "雨", "泽", "睿", "鑫", "帆",
+        "俊", "锋", "亮", "康", "志", "豪", "瑞", "林", "森", "霖",
+        "鹏", "飞", "骞", "腾", "超", "越", "钧", "鑫", "皓", "然",
+    ];
+    
+    // Common two-character given names (male)
+    let double_char_names = [
+        "建国", "建军", "志强", "志伟", "志明", "志刚", "志华", "志勇",
+        "建华", "建平", "建业", "文博", "文才", "文辉", "文涛",
+        "明辉", "明华", "明远", "明星", "晓东", "晓峰", "晓光", "晓军",
+        "海东", "海峰", "海明", "海超", "振华", "振宇", "振国", "振强",
+        "俊杰", "俊峰", "俊豪", "俊才", "伟东", "伟明", "伟峰", "伟豪",
+        "伟男", "伟民", "思远", "思雨", "思博", "思远",
+        "浩然", "浩宇", "浩轩", "浩天", "浩明", "浩博",
+        "子轩", "子墨", "子龙", "子豪", "子健", "子涵",
+        "一鸣", "一凡", "一航", "一凡", "天宇", "天翔", "天赐", "天佑", "天成", "天瑞",
+        "雨泽", "雨轩", "雨晨", "雨航", "宇航", "宇轩", "宇辰",
+        "诗豪", "诗杰", "博涛", "博远", "博涵", "博轩",
+        "冠宇", "冠豪", "冠杰", "冠霖", "冠东", "冠希",
+        "文轩", "文豪", "文杰", "文博", "文涛", "文博",
+        "睿渊", "睿诚", "睿智", "睿明", "睿轩", "睿材",
+        "泽宇", "泽轩", "泽雨", "泽恩", "泽豪", "泽瑞",
+        "俊杰", "俊贤", "俊豪", "俊逸", "俊健", "俊朗",
+        "子涵", "子轩", "子墨", "子龙", "子睿", "子琪",
+        "浩宇", "浩然", "浩轩", "浩天", "浩宇", "浩泽",
+        "明轩", "明远", "明哲", "明志", "明锐", "明健",
+        "梓轩", "梓豪", "梓涵", "梓杰", "梓霖", "梓博",
+        "浩然", "浩宇", "浩轩", "浩天", "浩明", "浩然大",
+        "天宇", "天翔", "天赐", "天佑", "天成", "天瑞",
+        "旭尧", "旭东", "旭阳", "旭豪", "旭辉", "旭彬",
+        "逸凡", "逸尘", "逸群", "逸才", "逸飞", "逸安",
+        "晨逸", "晨轩", "晨浩", "晨宇", "晨飞", "晨阳",
+        "承运", "承宇", "承轩", "承志", "承远", "承瑞",
+        "德润", "德宇", "德轩", "德志", "德明", "德豪",
+        "冠廷", "冠宇", "冠豪", "冠杰", "冠霖", "冠希",
+        "嘉祥", "嘉懿", "嘉言", "嘉行", "嘉瑞", "嘉豪",
+        "建安", "建白", "建业", "建成", "建华", "建元",
+        "晋鹏", "晋浩", "晋宇", "晋轩", "晋明", "晋才",
+        "经赋", "经国", "经纬", "经略", "经略", "经略",
+        "景曜", "景福", "景龙", "景明", "景天", "景和",
+        "乐生", "乐圣", "乐天", "乐成", "乐意", "乐康",
+        "明轩", "明远", "明哲", "明志", "明锐", "明健",
+        "天宇", "天翔", "天赐", "天佑", "天成", "天瑞",
+    ];
+    
+    let surname = surnames[rng.random_range(0..surnames.len())].to_string();
+    
+    // 70% chance for single character name, 30% for double character
+    let given_name = if rng.random_range(0..10) < 7 {
+        // 70% single character
+        single_char_names[rng.random_range(0..single_char_names.len())].to_string()
+    } else {
+        // 30% double character
+        double_char_names[rng.random_range(0..double_char_names.len())].to_string()
+    };
+    
+    let full_name = format!("{}{}", surname, given_name);
+    
+    (surname, full_name)
+}
+
+/// Generate a minority ethnic Chinese name (Mongol, Tibetan, Uyghur, Zhuang, Miao, Hui, etc.)
+/// Returns (surname, full_name) - all names are male
+fn generate_minority_name(rng: &mut impl Rng) -> (String, String) {
+    // Minority surnames (common among ethnic minorities) - male surnames
+    let minority_surnames = [
+        // Mongolian
+        "乌兰", "巴图", "哈斯", "巴雅尔", "苏日", "德勒", "巴根", "哈图",
+        // Tibetan  
+        "多吉", "扎西", "旦增", "索朗", "平措", "格桑", "达瓦", "次仁", "洛桑", "仁青",
+        // Uyghur
+        "阿不都", "艾力", "买买提", "吾布力", "艾孜", "穆合塔尔", "阿迪力", "艾克拜尔",
+        // Zhuang
+        "韦", "蒙", "陆", "农", "莫", "覃", "卢", "谭",
+        // Miao
+        "龙", "吴", "杨", "田", "石", "麻", "张", "王",
+        // Hui
+        "马", "苏", "丁", "黑", "摆", "闪", "保", "虎",
+    ];
+    
+    // Minority given names (single character) - male only
+    let minority_single = [
+        // Mongolian
+        "乌兰", "巴图", "巴雅尔", "苏日", "哈斯", "巴根", "哈图", "格尔",
+        // Tibetan
+        "多吉", "扎西", "旦增", "索朗", "平措", "格桑", "达瓦", "次仁", "洛桑", "仁青", "土登",
+        // Uyghur
+        "阿迪", "艾克", "阿力", "穆合", "吾斯", "艾山", "买买", "阿合",
+        // Zhuang/Miao/Hui
+        "金", "银", "华", "强", "勇", "军", "龙", "海", "刚", "明",
+    ];
+    
+    // Minority given names (double character) - male only
+    let minority_double = [
+        // Mongolian
+        "乌兰夫", "巴图尔", "巴雅尔", "苏日格", "哈斯尔", "巴根尔",
+        // Tibetan
+        "多吉杰", "扎西顿", "旦增罗", "索朗多", "平措杰", "格桑多", "洛桑杰",
+        // Uyghur
+        "阿迪力", "艾克拜尔", "穆合塔尔", "阿不都热合曼", "买买提明", "吾布力山",
+        // Zhuang/Miao/Hui
+        "韦国强", "蒙海龙", "陆志刚", "农文华", "莫军强", "覃勇军",
+        "龙国强", "杨勇军", "田文华", "石海军", "麻志刚", "马国强",
+    ];
+    
+    // 80% chance for surname-style (Han-style with minority surname), 20% for pure minority
+    let is_surname_style = rng.random_range(0..10) < 8;
+    
+    if is_surname_style {
+        // Use a minority surname with given name
+        let surname = minority_surnames[rng.random_range(0..minority_surnames.len())].to_string();
+        
+        // 50% minority given name, 50% Han-style given name
+        let given = if rng.random_range(0..2) == 0 {
+            if rng.random_range(0..2) == 0 {
+                minority_single[rng.random_range(0..minority_single.len())].to_string()
+            } else {
+                minority_double[rng.random_range(0..minority_double.len())].to_string()
+            }
+        } else {
+            // Han-style male given name
+            let han_given = [
+                "伟", "强", "磊", "浩", "杰", "鹏", "飞", "超", "龙", "凯",
+                "勇", "峰", "华", "刚", "军", "涛", "明", "东", "辉", "健",
+                "俊杰", "俊峰", "伟明", "志华", "志强", "志刚", "志勇",
+                "浩然", "浩宇", "子轩", "子豪", "一凡", "天宇", "天翔",
+            ];
+            han_given[rng.random_range(0..han_given.len())].to_string()
+        };
+        
+        let full_name = format!("{}{}", surname, given);
+        return (surname, full_name);
+    } else {
+        // Pure minority-style name (single-name culture)
+        let given = if rng.random_range(0..2) == 0 {
+            minority_single[rng.random_range(0..minority_single.len())].to_string()
+        } else {
+            minority_double[rng.random_range(0..minority_double.len())].to_string()
+        };
+        return (given.clone(), given);
+    }
+}
+
 /// Generate a random name based on country
 fn generate_name(country: &str, rng: &mut impl Rng) -> (String, String) {
-    // Simple name pools for Chinese names
-    let chinese_first = ["伟", "强", "磊", "浩", "杰", "鹏", "飞", "超", "龙", "凯", "文", "勇", "波", "峰", "华", "刚", "洋", "军", "涛", "明", "东", "雷", "宇", "晨", "辉", "松", "健", "斌", "威", "林", "海", "川", "博", "然", "程", "思", "雨", "泽", "睿", "鑫"];
-    let chinese_last = ["王", "李", "张", "刘", "陈", "杨", "黄", "赵", "周", "吴", "徐", "孙", "马", "朱", "胡", "郭", "何", "高", "林", "罗", "郑", "梁", "谢", "宋", "唐", "许", "韩", "冯", "邓", "曹", "彭", "曾", "肖", "田", "董", "袁", "潘", "于", "蒋", "蔡", "余", "杜", "叶", "程", "苏", "魏", "吕", "丁", "任", "沈"];
-    
-    let first = chinese_first[rng.random_range(0..chinese_first.len())].to_string();
-    let last = chinese_last[rng.random_range(0..chinese_last.len())].to_string();
-    
-    (first, last)
+    match country {
+        "China" | "Chinese" => generate_chinese_name(rng),
+        _ => {
+            // Fallback: simple English names
+            let first_names = ["James", "John", "Michael", "David", "Robert", "William", "Richard", "Joseph", "Thomas", "Charles"];
+            let last_names = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez"];
+            let first = first_names[rng.random_range(0..first_names.len())].to_string();
+            let last = last_names[rng.random_range(0..last_names.len())].to_string();
+            let full_name = format!("{} {}", first, last);
+            (last, full_name)
+        }
+    }
 }
 
 /// Recruit a youth player from recommendations
