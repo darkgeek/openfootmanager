@@ -13,8 +13,9 @@ import random
 
 random.seed(42)
 
-# Player name pools
-CHINESE_FIRST_NAMES = [
+# Chinese name pools - realistic variety
+# Two-character first names (most common)
+CHINESE_FIRST_2CHAR = [
     "伟", "强", "磊", "浩", "杰", "鹏", "飞", "超", "龙", "凯",
     "文", "勇", "波", "峰", "华", "刚", "洋", "军", "涛", "明",
     "东", "雷", "宇", "晨", "辉", "松", "健", "斌", "威", "林",
@@ -22,12 +23,31 @@ CHINESE_FIRST_NAMES = [
     "俊", "瑞", "志", "强", "勇", "超", "鹏", "飞", "龙", "涛"
 ]
 
-CHINESE_LAST_NAMES = [
+# Three-character first names (common)
+CHINESE_FIRST_3CHAR = [
+    "浩然", "子轩", "博文", "俊杰", "明轩", "志强", "宇轩", "浩宇",
+    "子涵", "梓轩", "俊杰", "浩然", "思远", "宇航", "子晨", "嘉豪",
+    "睿轩", "天宇", "子龙", "俊杰", "晨轩", "浩然", "文博", "宇航",
+    "子琪", "梓豪", "浩天", "明轩", "志远", "子墨", "一凡", "浩然",
+    "欣怡", "子萱", "思雨", "雨萱", "欣悦", "子涵", "梦瑶", "思琪"
+]
+
+
+# Single-character last names (most common)
+CHINESE_LAST_1CHAR = [
     "王", "李", "张", "刘", "陈", "杨", "黄", "赵", "周", "吴",
     "徐", "孙", "马", "朱", "胡", "郭", "何", "高", "林", "罗",
     "郑", "梁", "谢", "宋", "唐", "许", "韩", "冯", "邓", "曹",
     "彭", "曾", "肖", "田", "董", "袁", "潘", "于", "蒋", "蔡",
     "余", "杜", "叶", "程", "苏", "魏", "吕", "丁", "任", "沈"
+]
+
+
+# Two-character last names (rare but realistic)
+CHINESE_LAST_2CHAR = [
+    "欧阳", "司马", "上官", "诸葛", "慕容", "令狐", "公孙", "轩辕",
+    "夏侯", "呼延", "皇甫", "尉迟", "万俟", "澹台", "公冶", "宰父",
+    "谷梁", "拓跋", "夹谷", "宰衡", "辛阕", "且卯", "梁丘", "左丘"
 ]
 
 # Minority ethnic player names
@@ -69,9 +89,25 @@ def generate_name(is_foreign=False, is_minority=False, nationality=None):
         last = random.choice(MINORITY_LAST_NAMES)
         return f"{first}{last}", f"{last}", "China", "China"
     else:
-        first = random.choice(CHINESE_FIRST_NAMES)
-        last = random.choice(CHINESE_LAST_NAMES)
-        return f"{first} {last}", f"{last}", "China", "China"
+        # Chinese Han players - mix of different name lengths
+        name_type = random.random()
+        if name_type < 0.35:
+            # Two-character name: 姓 + 单字名 (e.g., 王伟, 张磊)
+            last = random.choice(CHINESE_LAST_1CHAR)
+            first = random.choice(CHINESE_FIRST_2CHAR)
+            full_name = f"{last}{first}"
+        elif name_type < 0.70:
+            # Two-character name: 姓 + 双字名 (e.g., 王浩然, 张子轩)
+            last = random.choice(CHINESE_LAST_1CHAR)
+            first = random.choice(CHINESE_FIRST_3CHAR)
+            full_name = f"{last}{first}"
+        else:
+            # Three-character name: 双字姓 + 名 (e.g., 欧阳浩然, 司马子轩)
+            last = random.choice(CHINESE_LAST_2CHAR)
+            first = random.choice(CHINESE_FIRST_2CHAR)
+            full_name = f"{last}{first}"
+        match_name = f"{last}{first}"
+        return full_name, match_name, "China", "China"
 
 def generate_attributes(position, base_ovr, variance=6):
     """Generate player attributes based on position and overall rating."""
