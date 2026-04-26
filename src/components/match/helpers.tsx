@@ -164,23 +164,23 @@ export const EVENT_ICONS: Record<
   ShotOnTarget: {
     icon: <Target className="w-4 h-4" />,
     color: "text-yellow-500",
-    important: false,
+    important: true,
   },
   // Atmosphere events
   Applause: {
     icon: <ThumbsUp className="w-4 h-4" />,
     color: "text-green-700 dark:text-green-400",
-    important: false,
+    important: true,
   },
   Chants: {
     icon: <Megaphone className="w-4 h-4" />,
     color: "text-blue-400",
-    important: false,
+    important: true,
   },
   Groans: {
     icon: <Frown className="w-4 h-4" />,
     color: "text-gray-500",
-    important: false,
+    important: true,
   },
   Atmosphere: {
     icon: <Volume2 className="w-4 h-4" />,
