@@ -18,6 +18,20 @@
 
 ---
 
+> ⚠️ **NOTE**: This is a **work-in-progress fork** with a web server mode (Axum HTTP) in addition to the original Tauri desktop mode. This version is **fully vibecoded** and **NOT ready for production use**.
+
+## Running the Web Version
+
+If you want to try it out, use the provided script to start both the backend and frontend:
+
+```bash
+./start.sh
+```
+
+Then open http://localhost:5173 in your browser.
+
+---
+
 **Openfoot Manager** is a free and open source football/soccer manager game, licensed under the [GPLv3](LICENSE.md), inspired by the famous franchise Football Manager&trade;.
 
 ## FEATURES
