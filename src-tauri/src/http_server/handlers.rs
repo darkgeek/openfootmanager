@@ -390,9 +390,14 @@ pub async fn load_game(
 
     // Generate youth recommendations if it's the first day of a new month
     if game.clock.current_date.date_naive().day() == 1 {
+        info!("[load_game] Generating monthly content for day 1");
         ofm_core::youth_academy::generate_monthly_recommendations(&mut game);
+        ofm_core::training_report::generate_monthly_training_report(&mut game);
     }
     ofm_core::youth_academy::cleanup_expired_recommendations(&mut game);
+    
+    info!("[load_game] Game loaded, snapshots: {}, messages: {}", 
+          game.training_snapshots.len(), game.messages.len());
 
     let mgr_name = format!("{} {}", game.manager.first_name, game.manager.last_name);
 
