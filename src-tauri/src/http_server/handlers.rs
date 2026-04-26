@@ -3,6 +3,7 @@
 
 use axum::{extract::State, Json};
 use chrono::Datelike;
+use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -19,6 +20,16 @@ use ofm_core::news;
 use ofm_core::player_events;
 use ofm_core::schedule;
 use ofm_core::live_match_manager::{self, MatchMode};
+use ofm_core::contracts::{
+    propose_renewal as propose_renewal_service,
+    RenewalOffer,
+    RenewalDecision,
+    DelegatedRenewalOptions,
+    delegate_renewals as delegate_renewals_service,
+    DelegatedRenewalReport,
+};
+use domain::negotiation::NegotiationFeedback;
+use domain::player::RenewalSessionStatus;
 use ofm_core::turn;
 
 use domain::manager::Manager;
@@ -688,25 +699,105 @@ pub async fn upgrade_facility(State(state): State<AppState>, Json(_params): Json
         .map(Json)
 }
 
-pub async fn propose_renewal(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
-    state.state_manager
-        .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())
-        .map(Json)
+#[derive(Debug, Clone, Serialize)]
+pub struct RenewalCommandResponse {
+    pub outcome: RenewalDecision,
+    pub game: Game,
+    pub suggested_wage: Option<u32>,
+    pub suggested_years: Option<u32>,
+    pub sessionStatus: RenewalSessionStatus,
+    pub isTerminal: bool,
+    pub cooledOff: bool,
+    pub feedback: Option<NegotiationFeedback>,
 }
 
-pub async fn delegate_renewals(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
-    state.state_manager
-        .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())
-        .map(Json)
+#[derive(Debug, Clone, Serialize)]
+pub struct DelegatedRenewalCommandResponse {
+    pub game: Game,
+    pub report: DelegatedRenewalReport,
 }
 
-pub async fn preview_renewal_financial_impact(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Value>, String> {
-    let _game = state.state_manager
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RenewalParams {
+    player_id: String,
+    weekly_wage: u32,
+    contract_years: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DelegatedRenewalParams {
+    player_ids: Option<Vec<String>>,
+    max_wage_increase_pct: u32,
+    max_contract_years: u32,
+}
+
+pub async fn propose_renewal(State(state): State<AppState>, Json(params): Json<RenewalParams>) -> Result<Json<RenewalCommandResponse>, String> {
+    info!("[http] propose_renewal: player_id={}, weekly_wage={}, contract_years={}",
+          params.player_id, params.weekly_wage, params.contract_years);
+
+    let mut game = state.state_manager
         .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())?;
-    Ok(Json(serde_json::json!({})))
+        .ok_or("No active game session")?;
+
+
+    let outcome = propose_renewal_service(
+        &mut game,
+        &params.player_id,
+        RenewalOffer {
+            weekly_wage: params.weekly_wage,
+            contract_years: params.contract_years,
+        },
+    )?;
+
+    state.state_manager.set_game(game.clone());
+
+
+    Ok(Json(RenewalCommandResponse {
+        outcome: outcome.decision,
+        game,
+        suggested_wage: outcome.suggested_wage,
+        suggested_years: outcome.suggested_years,
+        sessionStatus: outcome.session_status,
+        isTerminal: outcome.is_terminal,
+        cooledOff: outcome.cooled_off,
+        feedback: outcome.feedback,
+    }))
+}
+
+pub async fn delegate_renewals(State(state): State<AppState>, Json(params): Json<DelegatedRenewalParams>) -> Result<Json<DelegatedRenewalCommandResponse>, String> {
+    info!("[http] delegate_renewals: player_ids={:?}, max_wage_increase_pct={}, max_contract_years={}",
+          params.player_ids, params.max_wage_increase_pct, params.max_contract_years);
+
+    let mut game = state.state_manager
+        .get_game(|g| g.clone())
+        .ok_or("No active game session")?;
+
+    let report = delegate_renewals_service(
+        &mut game,
+        DelegatedRenewalOptions {
+            player_ids: params.player_ids,
+            max_wage_increase_pct: params.max_wage_increase_pct,
+            max_contract_years: params.max_contract_years,
+        },
+    )?;
+
+    state.state_manager.set_game(game.clone());
+
+    Ok(Json(DelegatedRenewalCommandResponse {
+        game,
+        report,
+    }))
+}
+
+pub async fn preview_renewal_financial_impact(State(_state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Value>, String> {
+    // TODO: Implement financial projection
+    Ok(Json(serde_json::json!({
+        "weeklyWageImpact": 0,
+        "annualWageImpact": 0,
+        "budgetImpactPct": 0
+    })))
 }
 
 pub async fn set_formation(State(state): State<AppState>, Json(params): Json<Value>) -> Result<Json<Game>, String> {
