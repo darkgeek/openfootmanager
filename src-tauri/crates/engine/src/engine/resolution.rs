@@ -1,6 +1,6 @@
 use rand::{Rng, RngExt};
 
-use crate::event::{EventType, MatchEvent};
+use crate::event::{ApplauseReason, EventType, MatchEvent};
 use crate::shared::{PlayStylePhase, TraitContext, home_mod, play_style_modifier, trait_bonus};
 use crate::types::{Position, Side, Zone};
 
@@ -139,7 +139,8 @@ fn resolve_buildup<R: Rng>(
         // Appreciation for the interception
         ctx.emit(
             MatchEvent::new(minute, EventType::Applause, def_side, ball_zone)
-                .with_player(&interceptor.id),
+                .with_player(&interceptor.id)
+                .with_applause_reason(ApplauseReason::Interception),
         );
         ctx.possession = def_side;
     }
@@ -213,7 +214,8 @@ fn resolve_midfield<R: Rng>(
             );
             ctx.emit(
                 MatchEvent::new(minute, EventType::Applause, def_side, Zone::Midfield)
-                    .with_player(&defender.id),
+                    .with_player(&defender.id)
+                    .with_applause_reason(ApplauseReason::Tackle),
             );
             maybe_foul(
                 ctx,
@@ -304,7 +306,8 @@ fn resolve_attacking_third<R: Rng>(
             );
             ctx.emit(
                 MatchEvent::new(minute, EventType::Applause, def_side, zone)
-                    .with_player(&defender.id),
+                    .with_player(&defender.id)
+                    .with_applause_reason(ApplauseReason::Tackle),
             );
             maybe_foul(ctx, minute, def_side, &attacker, &defender, zone, rng);
         } else {
@@ -324,7 +327,10 @@ fn resolve_attacking_third<R: Rng>(
         } else if rng.random_range(0.0..1.0f64) < 0.1 {
             // Offside trap
             ctx.emit(MatchEvent::new(minute, EventType::Offside, att_side, zone));
-            ctx.emit(MatchEvent::new(minute, EventType::Applause, def_side, zone));
+            ctx.emit(
+                MatchEvent::new(minute, EventType::Applause, def_side, zone)
+                    .with_applause_reason(ApplauseReason::General),
+            );
         }
 
         ctx.possession = def_side;
@@ -423,7 +429,8 @@ fn resolve_shot<R: Rng>(ctx: &mut MatchContext, minute: u8, att_side: Side, rng:
             );
             ctx.emit(
                 MatchEvent::new(minute, EventType::Applause, def_side, zone)
-                    .with_player(&goalkeeper.id),
+                    .with_player(&goalkeeper.id)
+                    .with_applause_reason(ApplauseReason::Save),
             );
         } else {
             ctx.emit(

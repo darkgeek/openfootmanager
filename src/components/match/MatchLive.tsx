@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { GameStateData } from "../../store/gameStore";
 import { MatchSnapshot, MatchEvent, MinuteResult, SimSpeed, SPEED_MS } from "./types";
-import { getEventDisplay, getPlayerName, phaseLabel } from "./helpers";
+import { getEventDisplay, getEventDescription, getPlayerName, phaseLabel } from "./helpers";
 import { Badge } from "../ui";
 import { useSettingsStore } from "../../store/settingsStore";
 import { EventFeed, MatchStats, Lineups } from "./MatchPanels";
@@ -377,24 +377,59 @@ export default function MatchLive({
           {/* Key Events sidebar */}
           <div className="p-4 flex-1 overflow-auto">
             <h3 className="text-xs font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3">{t('match.keyEvents')}</h3>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               {importantEvents
-                .filter(e => ["Goal", "PenaltyGoal", "YellowCard", "RedCard", "SecondYellow", "Substitution", "PenaltyMiss", "Injury", "GreatChance", "CloseCall", "GreatSave", "Diving", "Celebration", "Tension", "Applause", "ShotOnTarget", "Chants", "Groans"].includes(e.event_type))
                 .slice(-15).reverse()
                 .map((evt, i) => {
                   const display = getEventDisplay(evt);
+                  const description = getEventDescription(evt, snapshot);
+                  const isGoalEvent = display.category === 'goal';
+                  const isCardEvent = display.category === 'card';
+                  
                   return (
-                    <div key={i} className="flex items-center gap-2 text-xs">
-                      <span className="text-gray-600 dark:text-gray-500 tabular-nums w-6 text-right font-heading">{evt.minute}'</span>
-                      <span>{display.icon}</span>
-                      <span className={`${display.color} font-medium truncate`}>{getPlayerName(snapshot, evt.player_id)}</span>
-                      <Badge variant={evt.side === "Home" ? "primary" : "accent"} size="sm">
-                        {evt.side === "Home" ? snapshot.home_team.name.substring(0, 3) : snapshot.away_team.name.substring(0, 3)}
-                      </Badge>
+                    <div 
+                      key={i} 
+                      className={`
+                        flex items-start gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors
+                        ${isGoalEvent 
+                          ? 'bg-yellow-50/70 dark:bg-yellow-900/20 border border-yellow-200/50 dark:border-yellow-800/30' 
+                          : isCardEvent 
+                            ? 'bg-red-50/70 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/30' 
+                            : 'hover:bg-gray-50 dark:hover:bg-navy-700/30'
+                        }
+                      `}
+                    >
+                      <span className="text-gray-500 dark:text-gray-400 tabular-nums w-6 text-right font-heading flex-shrink-0">{evt.minute}'</span>
+                      <span className={`flex-shrink-0 ${display.color}`}>{display.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-medium truncate ${isGoalEvent ? 'text-yellow-800 dark:text-yellow-200' : isCardEvent ? 'text-red-800 dark:text-red-200' : 'text-gray-700 dark:text-gray-300'}`}>
+                          {description}
+                        </p>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Badge 
+                            variant={evt.side === "Home" ? "primary" : "accent"} 
+                            size="sm"
+                            className={isGoalEvent ? 'bg-yellow-100/50 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' : ''}
+                          >
+                            {evt.side === "Home" ? snapshot.home_team.name.substring(0, 3) : snapshot.away_team.name.substring(0, 3)}
+                          </Badge>
+                          {evt.secondary_player_id && isGoalEvent && (
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                              ({t('match.assist', { name: getPlayerName(snapshot, evt.secondary_player_id) })})
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
-              {importantEvents.length === 0 && <p className="text-gray-600 dark:text-gray-500 text-xs">{t('match.noEventsYet')}</p>}
+              {importantEvents.length === 0 && (
+                <div className="flex items-center justify-center py-8">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs text-center">
+                    {t('match.noEventsYet')}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </aside>

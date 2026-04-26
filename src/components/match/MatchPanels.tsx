@@ -1,8 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { MatchSnapshot, MatchEvent, EnginePlayerData } from "./types";
-import { getEventDisplay, getPlayerName } from "./helpers";
+import { getEventDisplay, getEventDescription, getPlayerName, getPlayerPosition, getEventCategoryClasses } from "./helpers";
 import { Badge } from "../ui";
 import { translatePositionAbbreviation } from "../squad/SquadTab.helpers";
+import { Circle } from "lucide-react";
 
 export function EventFeed({
   events,
@@ -14,57 +15,168 @@ export function EventFeed({
   feedRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const { t } = useTranslation();
-  return (
-    <div ref={feedRef} className="flex flex-col gap-1">
-      {events.length === 0 ? (
-          <div className="flex items-center justify-center h-40 text-gray-600 dark:text-gray-500">
-          <p className="font-heading text-sm uppercase tracking-wider">
+  
+  if (events.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-40">
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-navy-800 flex items-center justify-center">
+            <Circle className="w-6 h-6 text-gray-400" />
+          </div>
+          <p className="font-heading text-sm uppercase tracking-wider text-gray-600 dark:text-gray-500">
             {t("match.waitingKickoff")}
           </p>
         </div>
-      ) : (
-        events.slice().reverse().map((evt, i) => {
-          const display = getEventDisplay(evt);
-          const isHome = evt.side === "Home";
-          return (
-            <div
-              key={i}
-              className={`flex items-start gap-3 px-3 py-2 rounded-lg transition-colors ${display.important ? "bg-white dark:bg-navy-800/80 border border-gray-200 dark:border-navy-700 shadow-sm" : "opacity-60"}`}
-            >
-              <span className="text-gray-600 dark:text-gray-500 tabular-nums font-heading text-sm w-8 text-right flex-shrink-0 pt-0.5">
-                {evt.minute}'
-              </span>
-              <span className="text-lg flex-shrink-0">{display.icon}</span>
+      </div>
+    );
+  }
+  
+  return (
+    <div ref={feedRef} className="flex flex-col gap-1.5">
+      {events.slice().reverse().map((evt, i) => {
+        const display = getEventDisplay(evt);
+        const description = getEventDescription(evt, snapshot);
+        const isHome = evt.side === "Home";
+        const categoryClasses = getEventCategoryClasses(display.category);
+        const playerPosition = evt.player_id ? getPlayerPosition(snapshot, evt.player_id) : "";
+        const posAbbr = playerPosition ? translatePositionAbbreviation(t, playerPosition) : "";
+        
+        // Determine card events that need special treatment
+        const isCardEvent = display.category === "card";
+        const isGoalEvent = display.category === "goal";
+        const isImportantEvent = display.important;
+        
+        return (
+          <div
+            key={i}
+            className={`
+              relative overflow-hidden rounded-lg border transition-all duration-200
+              ${isGoalEvent 
+                ? `${display.bgColor} ${display.borderColor} shadow-sm ring-1 ring-${display.borderColor.includes('yellow') ? 'yellow' : 'amber'}-200/50 dark:ring-yellow-700/30` 
+                : isCardEvent 
+                  ? `${display.bgColor} ${display.borderColor} shadow-sm` 
+                  : isImportantEvent 
+                    ? `${display.bgColor} ${display.borderColor} shadow-sm` 
+                    : "bg-white/60 dark:bg-navy-800/40 border-gray-200/80 dark:border-navy-700/60 hover:bg-white/80 dark:hover:bg-navy-800/60"
+              }
+            `}
+          >
+            {/* Accent stripe for important events */}
+            {isImportantEvent && (
+              <div 
+                className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${display.color.replace('text-', 'bg-')}`}
+              />
+            )}
+            
+            <div className="flex items-start gap-2.5 px-3 py-2.5 pl-3">
+              {/* Minute badge */}
+              <div className={`
+                flex-shrink-0 w-10 h-10 rounded-lg flex flex-col items-center justify-center
+                ${isGoalEvent 
+                  ? "bg-gradient-to-br from-yellow-100 to-amber-100 dark:from-yellow-900/50 dark:to-amber-900/50" 
+                  : isCardEvent 
+                    ? "bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-900/50 dark:to-orange-900/50" 
+                    : isImportantEvent
+                      ? "bg-gradient-to-br from-gray-100 to-gray-50 dark:from-navy-700/50 dark:to-navy-800/50"
+                      : "bg-gray-100 dark:bg-navy-700/50"
+                }
+              `}>
+                <span className={`font-heading font-bold text-sm tabular-nums leading-none ${display.color}`}>
+                  {evt.minute}'
+                </span>
+                {isGoalEvent && (
+                  <span className="text-[8px] font-heading uppercase text-yellow-600 dark:text-yellow-400 mt-0.5">GOAL</span>
+                )}
+                {isCardEvent && (
+                  <span className="text-[8px] font-heading uppercase text-red-600 dark:text-red-400 mt-0.5">CARD</span>
+                )}
+              </div>
+              
+              {/* Event icon */}
+              <div className={`
+                flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center
+                ${isGoalEvent 
+                  ? "bg-yellow-100 dark:bg-yellow-900/40" 
+                  : isCardEvent 
+                    ? "bg-red-100 dark:bg-red-900/40" 
+                    : isImportantEvent
+                      ? "bg-gray-100 dark:bg-navy-700/40"
+                      : "bg-gray-50 dark:bg-navy-800/40"
+                }
+              `}>
+                <span className={display.color}>
+                  {display.icon}
+                </span>
+              </div>
+              
+              {/* Content */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Team badge */}
                   <span
-                    className={`font-heading font-bold text-xs uppercase tracking-wider ${isHome ? "text-primary-400" : "text-indigo-400"}`}
+                    className={`
+                      inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-heading font-bold uppercase tracking-wider
+                      ${isHome 
+                        ? "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300" 
+                        : "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+                      }
+                    `}
                   >
-                    {isHome ? snapshot.home_team.name : snapshot.away_team.name}
+                    {isHome ? snapshot.home_team.name.substring(0, 3) : snapshot.away_team.name.substring(0, 3)}
                   </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {evt.event_type.replace(/([A-Z])/g, " $1").trim()}
+                  
+                  {/* Position badge for events with players */}
+                  {posAbbr && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-heading bg-gray-100 text-gray-600 dark:bg-navy-700 dark:text-gray-400">
+                      {posAbbr}
+                    </span>
+                  )}
+                  
+                  {/* Event label */}
+                  <span className={`
+                    inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-heading font-medium uppercase tracking-wider
+                    ${categoryClasses.badge}
+                  `}>
+                    {display.label}
                   </span>
                 </div>
-                {evt.player_id && (
-                  <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-                    {getPlayerName(snapshot, evt.player_id)}
-                    {evt.secondary_player_id && (
-                      <span className="text-gray-500 dark:text-gray-400 font-normal">
-                        {evt.event_type === "Goal"
-                          ? ` (${t("match.assist", { name: getPlayerName(snapshot, evt.secondary_player_id) })})`
-                          : evt.event_type === "Substitution"
-                            ? ` ${t("match.subFor", { name: getPlayerName(snapshot, evt.secondary_player_id) })}`
-                            : ""}
-                      </span>
-                    )}
-                  </p>
+                
+                {/* Description */}
+                <p className={`
+                  mt-0.5 text-sm leading-snug
+                  ${isGoalEvent 
+                    ? "font-semibold text-gray-900 dark:text-gray-100" 
+                    : isCardEvent 
+                      ? "font-medium text-gray-800 dark:text-gray-200" 
+                      : isImportantEvent
+                        ? "font-medium text-gray-700 dark:text-gray-300"
+                        : "text-gray-600 dark:text-gray-400"
+                  }
+                `}>
+                  {description}
+                </p>
+                
+                {/* Secondary player for goal events (assists) */}
+                {evt.secondary_player_id && isGoalEvent && (
+                  <div className="mt-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <span>Assist:</span>
+                    <span className="font-medium text-gray-600 dark:text-gray-300">
+                      {getPlayerName(snapshot, evt.secondary_player_id)}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Secondary player for substitution events */}
+                {evt.secondary_player_id && evt.event_type === "Substitution" && (
+                  <div className="mt-0.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
+                    ↪ {getPlayerName(snapshot, evt.secondary_player_id)} comes on
+                  </div>
                 )}
               </div>
             </div>
-          );
-        })
-      )}
+          </div>
+        );
+      })}
     </div>
   );
 }

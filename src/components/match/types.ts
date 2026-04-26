@@ -2,6 +2,8 @@
 
 import type { TFunction } from "i18next";
 
+export type ApplauseReason = "Tackle" | "Interception" | "Clearance" | "Save" | "GreatSave" | "General";
+
 export interface MatchEvent {
   minute: number;
   event_type: string;
@@ -9,6 +11,7 @@ export interface MatchEvent {
   zone: string;
   player_id: string | null;
   secondary_player_id: string | null;
+  applause_reason?: ApplauseReason;
 }
 
 export interface EnginePlayerData {

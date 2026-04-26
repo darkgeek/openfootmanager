@@ -1,6 +1,6 @@
 use rand::{Rng, RngExt};
 
-use crate::event::{EventType, MatchEvent};
+use crate::event::{ApplauseReason, EventType, MatchEvent};
 use crate::shared::{PlayStylePhase, PlayerSnap, TraitContext, play_style_modifier, trait_bonus};
 use crate::types::{Position, Side, Zone};
 
@@ -51,6 +51,11 @@ impl LiveMatchState {
             EventType::Tackle | EventType::Interception
         ));
 
+        // Find the player involved in recent defensive action
+        let defensive_player_id = recent_events.iter().find(|e| 
+            matches!(e.event_type, EventType::Tackle | EventType::Interception)
+        ).and_then(|e| e.player_id.clone());
+
         // Determine atmosphere type
         let atm_type = if is_close_game && minute > 70 {
             // Tense end-game moment
@@ -82,7 +87,26 @@ impl LiveMatchState {
             }
         };
 
-        events.push(MatchEvent::new(minute, atm_type, Side::Home, Zone::Midfield));
+        // Create the atmosphere event with player info if available
+        let mut evt = MatchEvent::new(minute, atm_type.clone(), Side::Home, Zone::Midfield);
+        
+        // Attach player info for defensive Applause events
+        if matches!(atm_type, EventType::Applause) {
+            if let Some(player_id) = defensive_player_id {
+                evt = evt.with_player(&player_id);
+                // Check if it was a tackle or interception
+                let was_interception = recent_events.iter().any(|e| 
+                    matches!(e.event_type, EventType::Interception) && e.player_id.as_ref() == Some(&player_id)
+                );
+                if was_interception {
+                    evt = evt.with_applause_reason(ApplauseReason::Interception);
+                } else {
+                    evt = evt.with_applause_reason(ApplauseReason::Tackle);
+                }
+            }
+        }
+
+        events.push(evt);
         events
     }
 
@@ -188,7 +212,9 @@ impl LiveMatchState {
                 self.events.push(evt.clone());
                 events.push(evt);
                 // Applause for good tackle
-                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, Zone::Midfield);
+                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, Zone::Midfield)
+                    .with_player(&defender.id)
+                    .with_applause_reason(ApplauseReason::Tackle);
                 self.events.push(applause_evt.clone());
                 events.push(applause_evt);
                 let foul_events =
@@ -201,7 +227,9 @@ impl LiveMatchState {
                 self.events.push(evt.clone());
                 events.push(evt);
                 // Applause for good interception
-                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, Zone::Midfield);
+                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, Zone::Midfield)
+                    .with_player(&defender.id)
+                    .with_applause_reason(ApplauseReason::Interception);
                 self.events.push(applause_evt.clone());
                 events.push(applause_evt);
             }
@@ -278,7 +306,9 @@ impl LiveMatchState {
                 events.push(evt1);
                 events.push(evt2);
                 // Applause for good tackle
-                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, zone);
+                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, zone)
+                    .with_player(&defender.id)
+                    .with_applause_reason(ApplauseReason::Tackle);
                 self.events.push(applause_evt.clone());
                 events.push(applause_evt);
                 let foul_events =
@@ -290,7 +320,9 @@ impl LiveMatchState {
                 self.events.push(evt.clone());
                 events.push(evt);
                 // Applause for good clearance
-                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, zone);
+                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, zone)
+                    .with_player(&defender.id)
+                    .with_applause_reason(ApplauseReason::Clearance);
                 self.events.push(applause_evt.clone());
                 events.push(applause_evt);
             }
@@ -393,7 +425,9 @@ impl LiveMatchState {
                 self.events.push(great_save_evt.clone());
                 events.push(great_save_evt);
                 // Applause for the great save
-                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, Zone::Midfield);
+                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, Zone::Midfield)
+                    .with_player(&goalkeeper.id)
+                    .with_applause_reason(ApplauseReason::GreatSave);
                 self.events.push(applause_evt.clone());
                 events.push(applause_evt);
             } else {

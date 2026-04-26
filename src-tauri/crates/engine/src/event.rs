@@ -1,6 +1,23 @@
 use crate::types::{Side, Zone};
 use serde::{Deserialize, Serialize};
 
+/// Reason for applause events
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ApplauseReason {
+    /// Applause for a successful tackle
+    Tackle,
+    /// Applause for a successful interception
+    Interception,
+    /// Applause for a clearance
+    Clearance,
+    /// Applause for a goalkeeper save
+    Save,
+    /// Applause for a great save specifically
+    GreatSave,
+    /// General crowd appreciation (no specific action)
+    General,
+}
+
 /// A single event that occurred during the match.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MatchEvent {
@@ -12,6 +29,8 @@ pub struct MatchEvent {
     pub player_id: Option<String>,
     /// ID of a secondary player (assist provider, fouled player, etc.).
     pub secondary_player_id: Option<String>,
+    /// Reason for applause events
+    pub applause_reason: Option<ApplauseReason>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -95,6 +114,7 @@ impl MatchEvent {
             zone,
             player_id: None,
             secondary_player_id: None,
+            applause_reason: None,
         }
     }
 
@@ -105,6 +125,11 @@ impl MatchEvent {
 
     pub fn with_secondary(mut self, player_id: &str) -> Self {
         self.secondary_player_id = Some(player_id.to_string());
+        self
+    }
+
+    pub fn with_applause_reason(mut self, reason: ApplauseReason) -> Self {
+        self.applause_reason = Some(reason);
         self
     }
 
