@@ -20,7 +20,7 @@ import { invoke } from "../../lib/api";
 interface YouthAcademyTabProps {
   gameState: GameStateData;
   onSelectPlayer?: (id: string) => void;
-  onRefreshGameState?: () => void;
+  onRefreshGameState?: (gameState?: GameStateData) => void;
 }
 
 interface YouthRecommendation {
@@ -136,12 +136,13 @@ export default function YouthAcademyTab({
   const handleRecruit = async (recommendationId: string) => {
     try {
       setIsRecruiting(recommendationId);
-      await invoke("recruit_youth_player", { recommendationId });
-      // Refresh recommendations and game state
+      // recruit_youth_player now returns the complete game state
+      const updatedGame = await invoke<GameStateData>("recruit_youth_player", { recommendationId });
+      // Refresh recommendations
       const recs = await invoke<YouthRecommendation[]>("get_youth_recommendations", {});
       setRecommendations(recs || []);
-      // Notify parent to refresh game state
-      onRefreshGameState?.();
+      // Update parent with the returned game state directly
+      onRefreshGameState?.(updatedGame);
     } catch (error) {
       console.error("Failed to recruit player:", error);
       alert(`Failed to recruit: ${error}`);

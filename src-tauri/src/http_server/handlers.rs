@@ -1856,7 +1856,7 @@ pub async fn get_youth_recommendations(
 pub async fn recruit_youth_player(
     State(state): State<AppState>,
     Json(params): Json<Value>,
-) -> Result<Json<Value>, String> {
+) -> Result<Json<Game>, String> {
     let recommendation_id = params.get("recommendationId")
         .and_then(|v| v.as_str())
         .ok_or("Missing recommendationId")?;
@@ -1865,22 +1865,22 @@ pub async fn recruit_youth_player(
         .get_game(|g| g.clone())
         .ok_or("No active game session".to_string())?;
 
-    let result = ofm_core::youth_academy::recruit_youth_player(&mut game, recommendation_id)
+    // Recruit the youth player
+    let _result = ofm_core::youth_academy::recruit_youth_player(&mut game, recommendation_id)
         .map_err(|e| e.to_string())?;
+
 
     // Save the game immediately so the new player is persisted
     if let Some(save_id) = state.state_manager.get_save_id() {
         let mut sm = state.save_manager.lock().map_err(|e: std::sync::PoisonError<_>| e.to_string())?;
         sm.save_game(&game, &save_id)?;
     }
-    state.state_manager.set_game(game);
-    Ok(Json(serde_json::json!({
-        "success": true,
-        "player": {
-            "id": result.id,
-            "fullName": result.full_name,
-        }
-    })))
+
+    // Update game state in memory
+    state.state_manager.set_game(game.clone());
+
+    // Return the complete game state
+    Ok(Json(game))
 }
 
 fn calculate_age(dob: &str) -> u32 {
