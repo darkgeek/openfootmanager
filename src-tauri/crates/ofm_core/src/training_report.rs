@@ -268,7 +268,7 @@ fn calculate_single_player_changes(
         player_id: player.id.clone(),
         player_name: player.match_name.clone(),
         position: format!("{:?}", player.position),
-        overall_change: (current_overall - old_overall * 10.0).round() / 10.0,
+        overall_change: current_overall - old_overall,
         changes: all_changes,
     }
 }
@@ -293,7 +293,7 @@ fn generate_report_message(game: &mut Game, changes: &[PlayerAttributeChange], d
         for change in &sorted_changes {
             let direction = if change.overall_change > 0.0 { "📈" } else if change.overall_change < 0.0 { "📉" } else { "➡️" };
             body.push_str(&format!("### {} {} ({})\n", direction, change.player_name, change.position));
-            body.push_str(&format!("**Overall: {:+.1}**\n\n", change.overall_change));
+            body.push_str(&format!("**Overall: {:+.2}**\n\n", change.overall_change));
 
             // Show only attributes that changed
             let changed_attrs: Vec<_> = change.changes.iter()
