@@ -16,6 +16,14 @@ impl LiveMatchState {
         let def_side = att_side.opposite();
         let zone = self.ball_zone;
 
+        // Generate atmosphere events periodically
+        if minute % 5 == 0 || rng.random_range(0.0..1.0f64) < 0.15 {
+            let atm_events = self.generate_atmosphere_event(minute, rng);
+            for evt in atm_events {
+                self.events.push(evt.clone());
+            }
+        }
+
         if zone.is_box_for(att_side) {
             self.resolve_shot(minute, att_side, rng)
         } else if zone == Zone::attacking_third(att_side) {
@@ -25,6 +33,57 @@ impl LiveMatchState {
         } else {
             self.resolve_buildup(minute, att_side, def_side, rng)
         }
+    }
+
+    fn generate_atmosphere_event<R: Rng>(&mut self, minute: u8, rng: &mut R) -> Vec<MatchEvent> {
+        let mut events = Vec::new();
+        let home_score = self.home_score;
+        let away_score = self.away_score;
+        let is_close_game = (home_score as i16 - away_score as i16).abs() <= 1;
+        let is_goal_difference = home_score != away_score;
+
+        // Check recent events for context
+        let recent_events: Vec<_> = self.events.iter().rev().take(3).collect();
+        let had_shot = recent_events.iter().any(|e| matches!(e.event_type, 
+            EventType::ShotOnTarget | EventType::ShotOffTarget | EventType::ShotBlocked | EventType::ShotSaved
+        ));
+        let had_tackle = recent_events.iter().any(|e| matches!(e.event_type, 
+            EventType::Tackle | EventType::Interception
+        ));
+
+        // Determine atmosphere type
+        let atm_type = if is_close_game && minute > 70 {
+            // Tense end-game moment
+            EventType::Tension
+        } else if is_goal_difference && minute > 60 {
+            // Leading team atmosphere
+            if rng.random_range(0.0..1.0f64) < 0.5 {
+                EventType::Chants
+            } else {
+                EventType::Applause
+            }
+        } else if had_shot {
+            // Excitement after a shot
+            EventType::Tension
+        } else if had_tackle {
+            // Appreciation for defensive effort
+            EventType::Applause
+        } else if minute > 80 && home_score == away_score {
+            // Penalties anticipation
+            EventType::Tension
+        } else {
+            // General crowd noise
+            if rng.random_range(0.0..1.0f64) < 0.7 {
+                EventType::Atmosphere
+            } else if rng.random_range(0.0..1.0f64) < 0.5 {
+                EventType::Chants
+            } else {
+                EventType::Groans
+            }
+        };
+
+        events.push(MatchEvent::new(minute, atm_type, Side::Home, Zone::Midfield));
+        events
     }
 
     fn resolve_buildup<R: Rng>(
@@ -114,6 +173,13 @@ impl LiveMatchState {
                 .with_player(&attacker.id);
             self.events.push(evt.clone());
             events.push(evt);
+            // Key pass chance
+            if rng.random_range(0.0..1.0f64) < 0.3 {
+                let key_pass_evt = MatchEvent::new(minute, EventType::KeyPass, att_side, Zone::Midfield)
+                    .with_player(&attacker.id);
+                self.events.push(key_pass_evt.clone());
+                events.push(key_pass_evt);
+            }
             self.ball_zone = Zone::attacking_third(att_side);
         } else {
             if rng.random_range(0.0..1.0f64) < 0.6 {
@@ -121,6 +187,10 @@ impl LiveMatchState {
                     .with_player(&defender.id);
                 self.events.push(evt.clone());
                 events.push(evt);
+                // Applause for good tackle
+                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, Zone::Midfield);
+                self.events.push(applause_evt.clone());
+                events.push(applause_evt);
                 let foul_events =
                     self.maybe_foul(minute, def_side, &attacker, &defender, Zone::Midfield, rng);
                 events.extend(foul_events);
@@ -130,6 +200,10 @@ impl LiveMatchState {
                         .with_player(&defender.id);
                 self.events.push(evt.clone());
                 events.push(evt);
+                // Applause for good interception
+                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, Zone::Midfield);
+                self.events.push(applause_evt.clone());
+                events.push(applause_evt);
             }
             self.possession = def_side;
             self.ball_zone = Zone::Midfield;
@@ -183,6 +257,13 @@ impl LiveMatchState {
                 .with_player(&attacker.id);
             self.events.push(evt.clone());
             events.push(evt);
+            // Through ball chance
+            if rng.random_range(0.0..1.0f64) < 0.25 {
+                let through_evt = MatchEvent::new(minute, EventType::ThroughBall, att_side, zone)
+                    .with_player(&attacker.id);
+                self.events.push(through_evt.clone());
+                events.push(through_evt);
+            }
             self.ball_zone = Zone::attacking_box(att_side);
         } else {
             let is_tackle = rng.random_range(0.0..1.0f64) < 0.5;
@@ -196,6 +277,10 @@ impl LiveMatchState {
                 self.events.push(evt2.clone());
                 events.push(evt1);
                 events.push(evt2);
+                // Applause for good tackle
+                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, zone);
+                self.events.push(applause_evt.clone());
+                events.push(applause_evt);
                 let foul_events =
                     self.maybe_foul(minute, def_side, &attacker, &defender, zone, rng);
                 events.extend(foul_events);
@@ -204,6 +289,10 @@ impl LiveMatchState {
                     .with_player(&defender.id);
                 self.events.push(evt.clone());
                 events.push(evt);
+                // Applause for good clearance
+                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, zone);
+                self.events.push(applause_evt.clone());
+                events.push(applause_evt);
             }
             if rng.random_range(0.0..1.0f64) < 0.25 {
                 let evt = MatchEvent::new(minute, EventType::Corner, att_side, zone);
@@ -253,14 +342,36 @@ impl LiveMatchState {
                     .with_player(&shooter.id);
                 self.events.push(evt.clone());
                 events.push(evt);
+                // Groans from the crowd
+                let groan_evt = MatchEvent::new(minute, EventType::Groans, Side::Home, Zone::Midfield);
+                self.events.push(groan_evt.clone());
+                events.push(groan_evt);
             }
             self.ball_zone = Zone::Midfield;
             self.possession = def_side;
             return events;
         }
 
+        // Shot is on target!
+        let shot_on_target_evt = MatchEvent::new(minute, EventType::ShotOnTarget, att_side, zone)
+            .with_player(&shooter.id);
+        self.events.push(shot_on_target_evt.clone());
+        events.push(shot_on_target_evt);
+
         let conversion = (self.config.goal_conversion_base + (shoot_rating - gk_rating) / 150.0)
             .clamp(0.10, 0.70);
+
+        // Great chance if high shooting rating
+        if shoot_rating > 80.0 {
+            let great_chance_evt = MatchEvent::new(minute, EventType::GreatChance, att_side, zone)
+                .with_player(&shooter.id);
+            self.events.push(great_chance_evt.clone());
+            events.push(great_chance_evt);
+            // Tension before the shot
+            let tension_evt = MatchEvent::new(minute, EventType::Tension, Side::Home, Zone::Midfield);
+            self.events.push(tension_evt.clone());
+            events.push(tension_evt);
+        }
 
         if rng.random_range(0.0..1.0f64) < conversion {
             let evt = MatchEvent::new(minute, EventType::Goal, att_side, zone)
@@ -269,11 +380,28 @@ impl LiveMatchState {
             self.events.push(evt.clone());
             events.push(evt);
             self.add_goal(att_side);
+            // Celebration!
+            let celeb_evt = MatchEvent::new(minute, EventType::Celebration, att_side, Zone::Midfield);
+            self.events.push(celeb_evt.clone());
+            events.push(celeb_evt);
         } else {
-            let evt = MatchEvent::new(minute, EventType::ShotSaved, att_side, zone)
-                .with_player(&shooter.id);
-            self.events.push(evt.clone());
-            events.push(evt);
+            // Check for great save
+            let gk_quality = (goalkeeper.reflexes as f64 + goalkeeper.handling as f64) / 2.0;
+            if gk_quality > 75.0 && rng.random_range(0.0..1.0f64) < 0.5 {
+                let great_save_evt = MatchEvent::new(minute, EventType::GreatSave, def_side, zone)
+                    .with_player(&goalkeeper.id);
+                self.events.push(great_save_evt.clone());
+                events.push(great_save_evt);
+                // Applause for the great save
+                let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, Zone::Midfield);
+                self.events.push(applause_evt.clone());
+                events.push(applause_evt);
+            } else {
+                let evt = MatchEvent::new(minute, EventType::ShotSaved, att_side, zone)
+                    .with_player(&shooter.id);
+                self.events.push(evt.clone());
+                events.push(evt);
+            }
         }
 
         self.ball_zone = Zone::Midfield;
