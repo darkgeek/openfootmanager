@@ -1661,6 +1661,11 @@ pub async fn recruit_youth_player(
     let result = ofm_core::youth_academy::recruit_youth_player(&mut game, recommendation_id)
         .map_err(|e| e.to_string())?;
 
+    // Save the game immediately so the new player is persisted
+    if let Some(save_id) = state.state_manager.get_save_id() {
+        let mut sm = state.save_manager.lock().map_err(|e: std::sync::PoisonError<_>| e.to_string())?;
+        sm.save_game(&game, &save_id)?;
+    }
     state.state_manager.set_game(game);
     Ok(Json(serde_json::json!({
         "success": true,
