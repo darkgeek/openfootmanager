@@ -19,6 +19,7 @@ use ofm_core::messages;
 use ofm_core::news;
 use ofm_core::player_events;
 use ofm_core::schedule;
+use ofm_core::end_of_season::randomize_ai_training_focuses;
 use ofm_core::live_match_manager::{self, MatchMode};
 use ofm_core::contracts::{
     propose_renewal as propose_renewal_service,
@@ -231,7 +232,10 @@ pub async fn start_new_game(
         (world.teams, world.players, world.staff)
     };
 
-    let new_game = Game::new(clock, manager, teams, players, staff, vec![]);
+    let mut new_game = Game::new(clock, manager, teams, players, staff, vec![]);
+    // Randomize AI team training focuses for variety
+    let user_team_id = new_game.manager.team_id.clone().unwrap_or_default();
+    randomize_ai_training_focuses(&mut new_game, &user_team_id);
     state.state_manager.set_game(new_game.clone());
     state.state_manager.set_stats_state(StatsState::default());
     Ok(Json(new_game))

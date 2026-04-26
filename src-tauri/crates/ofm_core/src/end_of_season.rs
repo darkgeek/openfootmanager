@@ -164,7 +164,7 @@ pub fn has_full_schedule(league: &League) -> bool {
 
 /// Randomize training focuses for AI teams at the start of each season.
 /// Each AI team gets a random focus to create variety in player development.
-fn randomize_ai_training_focuses(game: &mut Game, user_team_id: &str) {
+pub fn randomize_ai_training_focuses(game: &mut Game, user_team_id: &str) {
     use domain::team::TrainingFocus;
     
     let focuses = [
