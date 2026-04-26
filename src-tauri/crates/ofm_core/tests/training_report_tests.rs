@@ -122,7 +122,7 @@ fn test_second_month_generates_report() {
 }
 
 #[test]
-fn test_no_change_no_report() {
+fn test_no_change_generates_summary_report() {
     // January 1st - create initial snapshot
     let mut game = make_game(1, 1);
     training_report::generate_monthly_training_report(&mut game);
@@ -133,8 +133,10 @@ fn test_no_change_no_report() {
     // Generate report
     training_report::generate_monthly_training_report(&mut game);
 
-    // No messages should be created (no changes)
-    assert!(game.messages.is_empty());
+    // Report should be generated even with no changes (shows summary message)
+    assert_eq!(game.messages.len(), 1);
+    let body = &game.messages[0].body;
+    assert!(body.contains("No significant attribute changes"));
 }
 
 #[test]

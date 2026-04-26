@@ -140,6 +140,8 @@ pub fn generate_monthly_training_report(game: &mut Game) {
 
     match existing_idx {
         Some(idx) => {
+            // Clone the recorded date before any mutable borrow
+            let last_month = game.training_snapshots[idx].recorded_date.clone();
             let snapshot = &game.training_snapshots[idx];
             
             // Check if we already have a snapshot for this month
@@ -150,10 +152,8 @@ pub fn generate_monthly_training_report(game: &mut Game) {
             // Calculate changes using player IDs and snapshot
             let changes = calculate_changes_for_team(&team_player_ids, &game.players, snapshot);
 
-            // Generate report message if there are changes
-            if !changes.is_empty() {
-                generate_report_message(game, &changes, &current_date);
-            }
+            // Generate report message
+            generate_report_message(game, &changes, &current_date, &last_month);
 
             // Update snapshot to current values
             let current_date_clone = current_date.clone();
@@ -168,7 +168,9 @@ pub fn generate_monthly_training_report(game: &mut Game) {
             };
         }
         None => {
-            // First time - create new snapshot
+            // First time - create new snapshot (no report for first month)
+            log::info!("[training_report] Creating first snapshot for team {} on {}", 
+                user_team_id, current_date);
             let snapshot_data: Vec<PlayerAttributeSnapshot> = game.players.iter()
                 .filter(|p| p.team_id.as_deref() == Some(&user_team_id))
                 .map(|p| PlayerAttributeSnapshot::from_player(p))
@@ -262,7 +264,7 @@ fn calculate_single_player_changes(
 }
 
 /// Generate the inbox message with training report
-fn generate_report_message(game: &mut Game, changes: &[PlayerAttributeChange], date: &str) {
+fn generate_report_message(game: &mut Game, changes: &[PlayerAttributeChange], date: &str, _last_month: &str) {
     let mut body = String::new();
     body.push_str("## Monthly Training Report\n\n");
     body.push_str("Here's how your squad has developed this month:\n\n");
@@ -273,31 +275,37 @@ fn generate_report_message(game: &mut Game, changes: &[PlayerAttributeChange], d
         b.overall_change.partial_cmp(&a.overall_change).unwrap()
     });
 
-    for change in &sorted_changes {
-        let direction = if change.overall_change > 0.0 { "📈" } else if change.overall_change < 0.0 { "📉" } else { "➡️" };
-        body.push_str(&format!("### {} {} ({})\n", direction, change.player_name, change.position));
-        body.push_str(&format!("**Overall: {:+.1}**\n\n", change.overall_change));
+    if sorted_changes.is_empty() {
+        // No changes at all
+        body.push_str("📋 No significant attribute changes this month.\n\n");
+        body.push_str("Training continues - attribute improvements are gradual and may not show every month.\n");
+    } else {
+        for change in &sorted_changes {
+            let direction = if change.overall_change > 0.0 { "📈" } else if change.overall_change < 0.0 { "📉" } else { "➡️" };
+            body.push_str(&format!("### {} {} ({})\n", direction, change.player_name, change.position));
+            body.push_str(&format!("**Overall: {:+.1}**\n\n", change.overall_change));
 
-        // Show only attributes that changed
-        let changed_attrs: Vec<_> = change.changes.iter()
-            .filter(|c| c.change != 0)
-            .collect();
+            // Show only attributes that changed
+            let changed_attrs: Vec<_> = change.changes.iter()
+                .filter(|c| c.change != 0)
+                .collect();
 
-        if changed_attrs.is_empty() {
-            body.push_str("*No attribute changes this month*\n\n");
-        } else {
-            for attr in changed_attrs {
-                let arrow = if attr.change > 0 { "⬆️" } else { "⬇️" };
-                body.push_str(&format!("{} {}: {} → {} ({})\n", 
-                    arrow,
-                    attr.name,
-                    attr.old_value,
-                    attr.new_value,
-                    attr.format_change()
-                ));
+            if changed_attrs.is_empty() {
+                body.push_str("*No attribute changes this month*\n\n");
+            } else {
+                for attr in changed_attrs {
+                    let arrow = if attr.change > 0 { "⬆️" } else { "⬇️" };
+                    body.push_str(&format!("{} {}: {} → {} ({})\n", 
+                        arrow,
+                        attr.name,
+                        attr.old_value,
+                        attr.new_value,
+                        attr.format_change()
+                    ));
+                }
             }
+            body.push_str("---\n\n");
         }
-        body.push_str("---\n\n");
     }
 
     // Create message
