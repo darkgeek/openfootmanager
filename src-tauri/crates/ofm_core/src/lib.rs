@@ -24,6 +24,7 @@ pub mod season_awards;
 pub mod season_context;
 pub mod state;
 pub mod training;
+pub mod training_report;
 pub mod transfers;
 pub mod turn;
 pub mod youth_academy;

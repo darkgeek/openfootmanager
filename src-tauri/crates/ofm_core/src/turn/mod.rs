@@ -86,6 +86,11 @@ where
     // Clean up expired recommendations
     crate::youth_academy::cleanup_expired_recommendations(game);
 
+    // Training report: generate monthly attribute change report on the 1st of each month
+    if game.clock.current_date.date_naive().day() == 1 {
+        crate::training_report::generate_monthly_training_report(game);
+    }
+
     news::generate_weekly_digest_news(game, &today);
     news::generate_pre_match_messages(game, &today);
 
@@ -118,6 +123,7 @@ pub fn finish_live_match_day(game: &mut Game) {
     // Youth academy: generate monthly recommendations on the 1st of each month
     if game.clock.current_date.date_naive().day() == 1 {
         crate::youth_academy::generate_monthly_recommendations(game);
+        crate::training_report::generate_monthly_training_report(game);
     }
     // Clean up expired recommendations
     crate::youth_academy::cleanup_expired_recommendations(game);
