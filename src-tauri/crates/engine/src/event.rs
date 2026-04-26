@@ -25,11 +25,15 @@ pub enum EventType {
     // --- Possession & passing ---
     PassCompleted,
     PassIntercepted,
+    KeyPass,
+    ThroughBall,
 
     // --- Attacking ---
     Dribble,
     DribbleTackled,
     Cross,
+    CrossCompleted,
+    CounterAttack,
 
     // --- Shooting ---
     ShotOnTarget,
@@ -40,26 +44,46 @@ pub enum EventType {
     PenaltyAwarded,
     PenaltyGoal,
     PenaltyMiss,
+    CloseCall,
+    GreatChance,
 
     // --- Defending ---
     Tackle,
     Interception,
     Clearance,
+    GoalkeeperPunch,
+    Offside,
 
     // --- Fouls & discipline ---
     Foul,
     YellowCard,
     RedCard,
     SecondYellow,
+    Diving,
 
     // --- Set pieces ---
     Corner,
     FreeKick,
+    FreeKickShot,
+    GoalKick,
+    ThrowIn,
+
+    // --- Atmosphere ---
+    Atmosphere,
+    Tension,
+    Celebration,
+    Applause,
+    Chants,
+    Groans,
+
+    // --- Goalkeeper ---
+    GreatSave,
+    GoalkeeperCatch,
 
     // --- Other ---
     Injury,
-    GoalKick,
     Substitution,
+    TimeWasting,
 }
 
 impl MatchEvent {
@@ -86,5 +110,39 @@ impl MatchEvent {
 
     pub fn is_goal(&self) -> bool {
         matches!(self.event_type, EventType::Goal | EventType::PenaltyGoal)
+    }
+}
+
+impl EventType {
+    /// Returns true if this event type is important enough to show in key events
+    pub fn is_key_event(&self) -> bool {
+        matches!(
+            self,
+            EventType::Goal
+                | EventType::PenaltyGoal
+                | EventType::PenaltyMiss
+                | EventType::YellowCard
+                | EventType::RedCard
+                | EventType::SecondYellow
+                | EventType::Substitution
+                | EventType::Injury
+                | EventType::GreatChance
+                | EventType::CloseCall
+                | EventType::GreatSave
+                | EventType::Diving
+        )
+    }
+
+    /// Returns true if this event type is a shooting event
+    pub fn is_shot(&self) -> bool {
+        matches!(
+            self,
+            EventType::ShotOnTarget
+                | EventType::ShotOffTarget
+                | EventType::ShotBlocked
+                | EventType::ShotSaved
+                | EventType::CloseCall
+                | EventType::GreatChance
+        )
     }
 }

@@ -379,8 +379,8 @@ export default function MatchLive({
             <h3 className="text-xs font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3">{t('match.keyEvents')}</h3>
             <div className="flex flex-col gap-1.5">
               {importantEvents
-                .filter(e => ["Goal", "PenaltyGoal", "YellowCard", "RedCard", "SecondYellow", "Substitution", "PenaltyMiss", "Injury"].includes(e.event_type))
-                .slice(-12).reverse()
+                .filter(e => ["Goal", "PenaltyGoal", "YellowCard", "RedCard", "SecondYellow", "Substitution", "PenaltyMiss", "Injury", "GreatChance", "CloseCall", "GreatSave", "Diving", "Celebration", "Tension"].includes(e.event_type))
+                .slice(-15).reverse()
                 .map((evt, i) => {
                   const display = getEventDisplay(evt);
                   return (
