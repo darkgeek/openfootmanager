@@ -817,32 +817,148 @@ pub async fn set_team_match_roles(State(state): State<AppState>, Json(params): J
     Ok(Json(game))
 }
 
-pub async fn set_training(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
-    state.state_manager
+pub async fn set_training(State(state): State<AppState>, Json(params): Json<Value>) -> Result<Json<Game>, String> {
+    let focus_str = params.get("focus")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing focus")?;
+    let intensity_str = params.get("intensity")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing intensity")?;
+
+    let focus: domain::team::TrainingFocus = match focus_str {
+        "Physical" => domain::team::TrainingFocus::Physical,
+        "Technical" => domain::team::TrainingFocus::Technical,
+        "Tactical" => domain::team::TrainingFocus::Tactical,
+        "Defending" => domain::team::TrainingFocus::Defending,
+        "Attacking" => domain::team::TrainingFocus::Attacking,
+        "Recovery" => domain::team::TrainingFocus::Recovery,
+        _ => return Err("Invalid training focus".to_string()),
+    };
+
+    let intensity: domain::team::TrainingIntensity = match intensity_str {
+        "Low" => domain::team::TrainingIntensity::Low,
+        "Medium" => domain::team::TrainingIntensity::Medium,
+        "High" => domain::team::TrainingIntensity::High,
+        _ => return Err("Invalid training intensity".to_string()),
+    };
+
+    let mut game = state.state_manager
         .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())
-        .map(Json)
+        .ok_or("No active game session".to_string())?;
+
+
+    if let Some(ref team_id) = game.manager.team_id {
+        if let Some(team) = game.teams.iter_mut().find(|t| t.id == *team_id) {
+            team.training_focus = focus;
+            team.training_intensity = intensity;
+        }
+    }
+
+    state.state_manager.set_game(game.clone());
+    Ok(Json(game))
 }
 
-pub async fn set_training_schedule(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
-    state.state_manager
+pub async fn set_training_schedule(State(state): State<AppState>, Json(params): Json<Value>) -> Result<Json<Game>, String> {
+    let schedule_str = params.get("schedule")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing schedule")?;
+
+
+    let schedule: domain::team::TrainingSchedule = match schedule_str {
+        "Intense" => domain::team::TrainingSchedule::Intense,
+        "Balanced" => domain::team::TrainingSchedule::Balanced,
+        "Light" => domain::team::TrainingSchedule::Light,
+        _ => return Err("Invalid training schedule".to_string()),
+    };
+
+
+    let mut game = state.state_manager
         .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())
-        .map(Json)
+        .ok_or("No active game session".to_string())?;
+
+    if let Some(ref team_id) = game.manager.team_id {
+        if let Some(team) = game.teams.iter_mut().find(|t| t.id == *team_id) {
+            team.training_schedule = schedule;
+        }
+    }
+
+    state.state_manager.set_game(game.clone());
+    Ok(Json(game))
 }
 
-pub async fn set_training_groups(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
-    state.state_manager
+pub async fn set_training_groups(State(state): State<AppState>, Json(params): Json<Value>) -> Result<Json<Game>, String> {
+    let groups_array = params.get("groups")
+        .and_then(|v| v.as_array())
+        .ok_or("Missing groups")?;
+
+    let mut game = state.state_manager
         .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())
-        .map(Json)
+        .ok_or("No active game session".to_string())?;
+
+
+    if let Some(ref team_id) = game.manager.team_id {
+        if let Some(team) = game.teams.iter_mut().find(|t| t.id == *team_id) {
+            let mut training_groups = Vec::new();
+            for (i, g) in groups_array.iter().enumerate() {
+                let id = g.get("id").and_then(|v| v.as_str()).unwrap_or(&format!("group_{}", i)).to_string();
+                let name = g.get("name").and_then(|v| v.as_str()).unwrap_or("Group").to_string();
+                let focus_str = g.get("focus").and_then(|v| v.as_str()).unwrap_or("Technical");
+                let focus: domain::team::TrainingFocus = match focus_str {
+                    "Physical" => domain::team::TrainingFocus::Physical,
+                    "Technical" => domain::team::TrainingFocus::Technical,
+                    "Tactical" => domain::team::TrainingFocus::Tactical,
+                    "Defending" => domain::team::TrainingFocus::Defending,
+                    "Attacking" => domain::team::TrainingFocus::Attacking,
+                    "Recovery" => domain::team::TrainingFocus::Recovery,
+                    _ => domain::team::TrainingFocus::Technical,
+                };
+                let player_ids: Vec<String> = g.get("player_ids")
+                    .and_then(|v| v.as_array())
+                    .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                    .unwrap_or_default();
+
+                training_groups.push(domain::team::TrainingGroup {
+                    id,
+                    name,
+                    focus,
+                    player_ids,
+                });
+            }
+            team.training_groups = training_groups;
+        }
+    }
+
+    state.state_manager.set_game(game.clone());
+    Ok(Json(game))
 }
 
-pub async fn set_player_training_focus(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
-    state.state_manager
+
+pub async fn set_player_training_focus(State(state): State<AppState>, Json(params): Json<Value>) -> Result<Json<Game>, String> {
+    let player_id = params.get("playerId")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing playerId")?;
+    let focus_str = params.get("focus").and_then(|v| v.as_str());
+
+    let focus: Option<domain::team::TrainingFocus> = focus_str.map(|s| match s {
+        "Physical" => domain::team::TrainingFocus::Physical,
+        "Technical" => domain::team::TrainingFocus::Technical,
+        "Tactical" => domain::team::TrainingFocus::Tactical,
+        "Defending" => domain::team::TrainingFocus::Defending,
+        "Attacking" => domain::team::TrainingFocus::Attacking,
+        "Recovery" => domain::team::TrainingFocus::Recovery,
+        _ => domain::team::TrainingFocus::Technical,
+    });
+
+    let mut game = state.state_manager
         .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())
-        .map(Json)
+        .ok_or("No active game session".to_string())?;
+
+    if let Some(player) = game.players.iter_mut().find(|p| p.id == player_id) {
+        player.training_focus = focus;
+    }
+
+    state.state_manager.set_game(game.clone());
+    Ok(Json(game))
 }
 
 pub async fn hire_staff(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
