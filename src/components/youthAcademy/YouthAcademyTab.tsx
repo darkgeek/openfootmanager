@@ -20,7 +20,7 @@ import { invoke } from "../../lib/api";
 interface YouthAcademyTabProps {
   gameState: GameStateData;
   onSelectPlayer?: (id: string) => void;
-  onRefreshGameState?: (gameState?: GameStateData) => void;
+  onRefreshGameState?: (gameState: GameStateData) => void;
 }
 
 interface YouthRecommendation {
