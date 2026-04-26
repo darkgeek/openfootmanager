@@ -177,7 +177,8 @@ pub fn process_training(game: &mut Game, weekday_num: u32) {
             // Age, morale, and current condition all affect recovery rate.
             // Older players recover more slowly; high morale aids recovery;
             // severely fatigued players have a harder time bouncing back.
-            let age = estimate_age(&player.date_of_birth);
+            let current_year = game.clock.current_date.format("%Y").to_string().parse().unwrap_or(2026);
+            let age = estimate_age(&player.date_of_birth, current_year);
             let age_rec = recovery_factor_from_age(age);
             let morale_rec = recovery_factor_from_morale(player.morale);
             let condition_rec = recovery_factor_from_condition(player.condition);
@@ -336,16 +337,13 @@ fn apply_focus_gains(
     }
 }
 
-/// Estimate player age from date_of_birth string ("YYYY-MM-DD").
-fn estimate_age(dob: &str) -> u32 {
+/// Estimate player age from date_of_birth string ("YYYY-MM-DD") using the game's current year.
+fn estimate_age(dob: &str, current_year: u32) -> u32 {
     let parts: Vec<&str> = dob.split('-').collect();
     if parts.is_empty() {
         return 25; // fallback
     }
     let birth_year: u32 = parts[0].parse().unwrap_or(2000);
-    // Use a rough estimate — the game clock year would be ideal but
-    // this is close enough for growth factor purposes.
-    let current_year: u32 = 2025;
     current_year.saturating_sub(birth_year)
 }
 

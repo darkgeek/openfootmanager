@@ -4,8 +4,141 @@ use crate::season_awards::compute_season_awards;
 use chrono::Duration;
 use domain::league::{FixtureStatus, League};
 use domain::message::*;
-use domain::player::PlayerSeasonStats;
+use domain::player::{PlayerSeasonStats, PlayerAttributes};
 use domain::team::{FinancialTransaction, FinancialTransactionKind, TeamSeasonRecord};
+use rand::RngExt;
+
+/// Estimate player age from date_of_birth string ("YYYY-MM-DD").
+fn estimate_age(dob: &str, current_year: u32) -> u32 {
+    let parts: Vec<&str> = dob.split('-').collect();
+    if parts.is_empty() {
+        return 25;
+    }
+    let birth_year: u32 = parts[0].parse().unwrap_or(2000);
+    current_year.saturating_sub(birth_year)
+}
+
+/// Calculate player's overall rating from attributes.
+fn calculate_overall(attrs: &PlayerAttributes) -> f64 {
+    (attrs.pace as f64
+        + attrs.stamina as f64
+        + attrs.strength as f64
+        + attrs.passing as f64
+        + attrs.shooting as f64
+        + attrs.tackling as f64
+        + attrs.dribbling as f64
+        + attrs.defending as f64
+        + attrs.positioning as f64
+        + attrs.vision as f64
+        + attrs.decisions as f64)
+        / 11.0
+}
+
+/// Apply season-end growth for all players.
+/// This simulates natural development over the off-season:
+/// - Young players (age <= 24): grow based on current overall
+/// - Prime players (25-30): small growth
+/// - Declining players (31-34): maintenance
+/// - Old players (35+): slight decline
+fn apply_season_end_growth(game: &mut Game) {
+    let current_year = game.clock.current_date.format("%Y").to_string().parse().unwrap_or(2026);
+    
+    for player in game.players.iter_mut() {
+        // Skip free agents or players without a team
+        if player.team_id.is_none() {
+            continue;
+        }
+        
+        let age = estimate_age(&player.date_of_birth, current_year);
+        let current_overall = calculate_overall(&player.attributes);
+        
+        // Calculate growth based on age
+        let (growth_factor, decline_factor) = match age {
+            0..=21 => (0.8, 0.0),      // Young: significant growth
+            22..=24 => (0.5, 0.0),     // Early career: moderate growth
+            25..=28 => (0.2, 0.0),     // Peak: small growth
+            29..=32 => (0.1, 0.0),     // Late prime: tiny growth
+            33..=34 => (0.0, 0.0),     // Transition: no change
+            _ => (0.0, 0.3),           // Old: start declining
+        };
+        
+        // Calculate the number to add/subtract from each attribute
+        let growth_amount = if growth_factor > 0.0 {
+            ((current_overall / 100.0) * growth_factor).max(0.5) as i8
+        } else {
+            0
+        };
+        
+        let decline_amount = if decline_factor > 0.0 {
+            ((current_overall / 100.0) * decline_factor).max(0.3) as i8
+        } else {
+            0
+        };
+        
+        // Apply growth to relevant attributes based on position
+        if growth_amount > 0 {
+            match player.position {
+                domain::player::Position::Goalkeeper => {
+                    player.attributes.handling = (player.attributes.handling as i8 + growth_amount).clamp(1, 99) as u8;
+                    player.attributes.reflexes = (player.attributes.reflexes as i8 + growth_amount).clamp(1, 99) as u8;
+                    player.attributes.aerial = (player.attributes.aerial as i8 + growth_amount).clamp(1, 99) as u8;
+                    player.attributes.positioning = (player.attributes.positioning as i8 + growth_amount / 2).clamp(1, 99) as u8;
+                }
+                domain::player::Position::Defender => {
+                    player.attributes.tackling = (player.attributes.tackling as i8 + growth_amount).clamp(1, 99) as u8;
+                    player.attributes.defending = (player.attributes.defending as i8 + growth_amount).clamp(1, 99) as u8;
+                    player.attributes.strength = (player.attributes.strength as i8 + growth_amount / 2).clamp(1, 99) as u8;
+                    player.attributes.positioning = (player.attributes.positioning as i8 + growth_amount / 2).clamp(1, 99) as u8;
+                }
+                domain::player::Position::Midfielder => {
+                    player.attributes.passing = (player.attributes.passing as i8 + growth_amount).clamp(1, 99) as u8;
+                    player.attributes.vision = (player.attributes.vision as i8 + growth_amount).clamp(1, 99) as u8;
+                    player.attributes.decisions = (player.attributes.decisions as i8 + growth_amount).clamp(1, 99) as u8;
+                    player.attributes.stamina = (player.attributes.stamina as i8 + growth_amount / 2).clamp(1, 99) as u8;
+                }
+                domain::player::Position::Forward => {
+                    player.attributes.shooting = (player.attributes.shooting as i8 + growth_amount).clamp(1, 99) as u8;
+                    player.attributes.dribbling = (player.attributes.dribbling as i8 + growth_amount).clamp(1, 99) as u8;
+                    player.attributes.pace = (player.attributes.pace as i8 + growth_amount / 2).clamp(1, 99) as u8;
+                    player.attributes.positioning = (player.attributes.positioning as i8 + growth_amount / 2).clamp(1, 99) as u8;
+                }
+                _ => {}
+            }
+            // All players get small growth in teamwork and composure
+            player.attributes.teamwork = (player.attributes.teamwork as i8 + growth_amount / 3).clamp(1, 99) as u8;
+            player.attributes.composure = (player.attributes.composure as i8 + growth_amount / 3).clamp(1, 99) as u8;
+        }
+        
+        // Apply decline to old players
+        if decline_amount > 0 {
+            // Decline pace, stamina, and physical attributes first
+            player.attributes.pace = (player.attributes.pace as i8 - decline_amount).clamp(1, 99) as u8;
+            player.attributes.stamina = (player.attributes.stamina as i8 - decline_amount).clamp(1, 99) as u8;
+            player.attributes.strength = (player.attributes.strength as i8 - decline_amount / 2).clamp(1, 99) as u8;
+            
+            // For non-GKs, also decline relevant attributes
+            if !matches!(player.position, domain::player::Position::Goalkeeper) {
+                player.attributes.pace = (player.attributes.pace as i8 - decline_amount / 2).clamp(1, 99) as u8;
+            } else {
+                player.attributes.reflexes = (player.attributes.reflexes as i8 - decline_amount).clamp(1, 99) as u8;
+            }
+        }
+        
+        // Update market value based on new overall
+        let new_overall = calculate_overall(&player.attributes);
+        let age_factor = if age <= 23 {
+            1.5
+        } else if age <= 28 {
+            1.2
+        } else if age <= 32 {
+            0.8
+        } else {
+            0.4
+        };
+        player.market_value = ((new_overall as f64).powi(2) * 500.0 * age_factor) as u64;
+        player.wage = (player.market_value / 200).max(500) as u32;
+    }
+}
 
 pub fn expected_fixture_count(team_count: usize) -> Option<usize> {
     if team_count >= 2 && team_count % 2 == 0 {
@@ -26,6 +159,41 @@ pub fn has_full_schedule(league: &League) -> bool {
                 == expected_fixture_count
         }
         None => false,
+    }
+}
+
+/// Randomize training focuses for AI teams at the start of each season.
+/// Each AI team gets a random focus to create variety in player development.
+fn randomize_ai_training_focuses(game: &mut Game, user_team_id: &str) {
+    use domain::team::TrainingFocus;
+    
+    let focuses = [
+        TrainingFocus::Physical,
+        TrainingFocus::Technical,
+        TrainingFocus::Tactical,
+        TrainingFocus::Defending,
+        TrainingFocus::Attacking,
+    ];
+    
+    let mut rng = rand::rng();
+    
+    for team in game.teams.iter_mut() {
+        // Skip user's team - they control their own training
+        if team.id == user_team_id {
+            continue;
+        }
+        
+        // Randomize AI team training focus
+        let focus_idx = rng.random_range(0..focuses.len());
+        team.training_focus = focuses[focus_idx].clone();
+        
+        // Set random training intensity
+        let intensity = match rng.random_range(0..3) {
+            0 => domain::team::TrainingIntensity::Low,
+            1 => domain::team::TrainingIntensity::Medium,
+            _ => domain::team::TrainingIntensity::High,
+        };
+        team.training_intensity = intensity;
     }
 }
 
@@ -225,6 +393,9 @@ pub fn process_end_of_season(game: &mut Game) -> EndOfSeasonSummary {
         // Reset stats for next season
         player.stats = PlayerSeasonStats::default();
     }
+    
+    // Apply season-end growth for all players
+    apply_season_end_growth(game);
 
     // 6. Update manager career stats
     if let Some(standing) = &user_standing {
@@ -314,6 +485,9 @@ pub fn process_end_of_season(game: &mut Game) -> EndOfSeasonSummary {
         &preview_date,
     ));
 
+    // Randomize AI team training focuses for new season
+    randomize_ai_training_focuses(game, &user_team_id);
+    
     // 8. Send end-of-season messages
     let pos_suffix = position_suffix(user_position);
 
