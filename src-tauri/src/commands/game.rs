@@ -281,3 +281,41 @@ pub async fn exit_to_menu(
 
     Ok(())
 }
+
+/// Debug command: Get training report status
+#[tauri::command]
+pub async fn debug_training_report_status(
+    state: State<'_, StateManager>,
+) -> Result<TrainingReportDebugInfo, String> {
+    let game = state
+        .get_game(|g: &Game| g.clone())
+        .ok_or("No active game session")?;
+
+    Ok(TrainingReportDebugInfo {
+        current_date: game.clock.current_date.format("%Y-%m-%d").to_string(),
+        snapshot_count: game.training_snapshots.len(),
+        snapshots: game.training_snapshots.iter().map(|s| SnapshotInfo {
+            team_id: s.team_id.clone(),
+            recorded_date: s.recorded_date.clone(),
+            player_count: s.players.len(),
+        }).collect(),
+        training_message_count: game.messages.iter()
+            .filter(|m| m.category == domain::message::MessageCategory::Training)
+            .count(),
+    })
+}
+
+#[derive(serde::Serialize)]
+pub struct TrainingReportDebugInfo {
+    pub current_date: String,
+    pub snapshot_count: usize,
+    pub snapshots: Vec<SnapshotInfo>,
+    pub training_message_count: usize,
+}
+
+#[derive(serde::Serialize)]
+pub struct SnapshotInfo {
+    pub team_id: String,
+    pub recorded_date: String,
+    pub player_count: usize,
+}

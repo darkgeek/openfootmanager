@@ -490,6 +490,7 @@ mod tests {
             scouting_assignments: vec![],
             board_objectives: vec![],
             season_context: domain::season::SeasonContext::default(),
+            training_snapshots: vec![],
         }
     }
 

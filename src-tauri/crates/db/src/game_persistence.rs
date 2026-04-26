@@ -146,6 +146,7 @@ impl GamePersistenceReader {
             season_context: domain::season::SeasonContext::default(),
             days_since_last_job_offer: None,
             youth_recommendations: vec![],
+            training_snapshots: vec![],
         };
         ofm_core::season_context::refresh_game_context(&mut game);
 
