@@ -70,7 +70,15 @@ pub struct Player {
     pub transfer_offers: Vec<TransferOffer>,
     #[serde(default)]
     pub morale_core: PlayerMoraleCore,
+
+    // Suspension tracking (resets each season)
+    #[serde(default)]
+    pub suspension_games_remaining: u8,  // Games remaining until player can play again
+    #[serde(default = "default_zero")]
+    pub accumulated_yellow_cards: u8,   // Yellow cards this season (resets each season)
 }
+
+fn default_zero() -> u8 { 0 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum Position {
@@ -525,6 +533,8 @@ impl Player {
             loan_listed: false,
             transfer_offers: Vec::new(),
             morale_core: PlayerMoraleCore::default(),
+            suspension_games_remaining: 0,
+            accumulated_yellow_cards: 0,
         }
     }
 }

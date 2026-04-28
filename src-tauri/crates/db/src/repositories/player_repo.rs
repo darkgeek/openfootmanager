@@ -30,8 +30,9 @@ pub fn upsert_player(conn: &Connection, p: &Player) -> Result<(), String> {
           attributes, condition, morale, injury, team_id, traits,
           contract_end, wage, market_value, stats, career,
           transfer_listed, loan_listed, transfer_offers, alternate_positions,
-          natural_position, training_focus, morale_core, footedness, weak_foot, fitness)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29)",
+          natural_position, training_focus, morale_core, footedness, weak_foot, fitness,
+          suspension_games_remaining, accumulated_yellow_cards)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31)",
         params![
             p.id,
             p.match_name,
@@ -62,6 +63,8 @@ pub fn upsert_player(conn: &Connection, p: &Player) -> Result<(), String> {
             footedness_str,
             p.weak_foot,
             p.fitness,
+            p.suspension_games_remaining,
+            p.accumulated_yellow_cards,
         ],
     )
     .map_err(|e| format!("Failed to upsert player: {}", e))?;
@@ -127,7 +130,8 @@ pub fn load_all_players(conn: &Connection) -> Result<Vec<Player>, String> {
                     attributes, condition, morale, injury, team_id, traits,
                     contract_end, wage, market_value, stats, career,
                     transfer_listed, loan_listed, transfer_offers, alternate_positions,
-                    natural_position, training_focus, morale_core, footedness, weak_foot, fitness
+                    natural_position, training_focus, morale_core, footedness, weak_foot, fitness,
+                    suspension_games_remaining, accumulated_yellow_cards
              FROM players",
         )
         .map_err(|e| format!("Failed to prepare players query: {}", e))?;
@@ -151,7 +155,8 @@ pub fn load_players_by_team(conn: &Connection, team_id: &str) -> Result<Vec<Play
                     attributes, condition, morale, injury, team_id, traits,
                     contract_end, wage, market_value, stats, career,
                     transfer_listed, loan_listed, transfer_offers, alternate_positions,
-                    natural_position, training_focus, morale_core, footedness, weak_foot, fitness
+                    natural_position, training_focus, morale_core, footedness, weak_foot, fitness,
+                    suspension_games_remaining, accumulated_yellow_cards
              FROM players WHERE team_id = ?1",
         )
         .map_err(|e| format!("Failed to prepare players query: {}", e))?;
@@ -185,6 +190,8 @@ fn row_to_player(row: &rusqlite::Row) -> rusqlite::Result<Player> {
     let transfer_listed_int: i32 = row.get(19)?;
     let loan_listed_int: i32 = row.get(20)?;
     let market_value_i64: i64 = row.get(16)?;
+    let suspension_games_remaining: u8 = row.get(29).unwrap_or(0); // default 0 for saves before V17
+    let accumulated_yellow_cards: u8 = row.get(30).unwrap_or(0); // default 0 for saves before V17
 
     let position = parse_position(&position_str);
     let natural_position = if natural_position_str.is_empty() {
@@ -243,6 +250,8 @@ fn row_to_player(row: &rusqlite::Row) -> rusqlite::Result<Player> {
         loan_listed: loan_listed_int != 0,
         transfer_offers: serde_json::from_str(&offers_json).unwrap_or_default(),
         morale_core: serde_json::from_str(&morale_core_json).unwrap_or_default(),
+        suspension_games_remaining,
+        accumulated_yellow_cards,
     })
 }
 

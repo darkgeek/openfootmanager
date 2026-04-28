@@ -400,6 +400,9 @@ pub fn process_end_of_season(game: &mut Game) -> EndOfSeasonSummary {
         }
         // Reset stats for next season
         player.stats = PlayerSeasonStats::default();
+        // Reset suspensions and accumulated yellow cards for new season
+        player.suspension_games_remaining = 0;
+        player.accumulated_yellow_cards = 0;
     }
     
     // Apply season-end growth for all players

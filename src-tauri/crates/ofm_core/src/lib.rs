@@ -21,6 +21,7 @@ pub mod random_events;
 pub mod schedule;
 pub mod scouting;
 pub mod season_awards;
+pub mod suspensions;
 pub mod season_context;
 pub mod state;
 pub mod training;

@@ -79,6 +79,13 @@ where
     scouting::process_scouting(game);
     transfers::generate_incoming_transfer_offers(game);
 
+    // Process suspension reductions (decrement after each day passes)
+    for player in game.players.iter_mut() {
+        if player.suspension_games_remaining > 0 {
+            player.suspension_games_remaining -= 1;
+        }
+    }
+
     // Youth academy: generate monthly recommendations on the 1st of each month
     if game.clock.current_date.date_naive().day() == 1 {
         crate::youth_academy::generate_monthly_recommendations(game);
