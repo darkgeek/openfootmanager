@@ -24,6 +24,13 @@ pub fn generate_world_data(data_dir: Option<&std::path::Path>) -> WorldData {
 
 /// Parse a JSON string into a `WorldData`.
 pub fn load_world_from_json(json: &str) -> Result<WorldData, String> {
+    log::info!("[load_world_from_json] JSON length: {}", json.len());
+    if json.is_empty() {
+        return Err("Empty JSON string".to_string());
+    }
+    let first_char = json.chars().next();
+    log::info!("[load_world_from_json] First char: {:?}", first_char);
+    
     let mut world: WorldData =
         serde_json::from_str(json).map_err(|e| format!("Failed to parse world database: {}", e))?;
     crate::football_identity::upgrade_world_football_identities(
