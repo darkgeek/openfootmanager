@@ -29,8 +29,8 @@
         "youth": 20,
         "stadium": 11
       },
-      "formation": "4-4-2",
-      "play_style": "Balanced",
+      "formation": "3-4-3",
+      "play_style": "Attacking",
       "training_focus": "Physical",
       "training_intensity": "Medium",
       "training_schedule": "Balanced",
@@ -74,8 +74,8 @@
         "youth": 17,
         "stadium": 11
       },
-      "formation": "4-4-2",
-      "play_style": "Balanced",
+      "formation": "4-3-3",
+      "play_style": "Attacking",
       "training_focus": "Physical",
       "training_intensity": "Medium",
       "training_schedule": "Balanced",
@@ -119,8 +119,8 @@
         "youth": 20,
         "stadium": 10
       },
-      "formation": "4-4-2",
-      "play_style": "Balanced",
+      "formation": "3-5-2",
+      "play_style": "Defensive",
       "training_focus": "Physical",
       "training_intensity": "Medium",
       "training_schedule": "Balanced",
@@ -165,7 +165,7 @@
         "stadium": 19
       },
       "formation": "4-4-2",
-      "play_style": "Balanced",
+      "play_style": "Attacking",
       "training_focus": "Physical",
       "training_intensity": "Medium",
       "training_schedule": "Balanced",
@@ -209,8 +209,8 @@
         "youth": 14,
         "stadium": 12
       },
-      "formation": "4-4-2",
-      "play_style": "Balanced",
+      "formation": "4-2-3-1",
+      "play_style": "Attacking",
       "training_focus": "Physical",
       "training_intensity": "Medium",
       "training_schedule": "Balanced",
@@ -254,7 +254,7 @@
         "youth": 12,
         "stadium": 14
       },
-      "formation": "4-4-2",
+      "formation": "4-3-3",
       "play_style": "Balanced",
       "training_focus": "Physical",
       "training_intensity": "Medium",
@@ -299,8 +299,8 @@
         "youth": 19,
         "stadium": 14
       },
-      "formation": "4-4-2",
-      "play_style": "Balanced",
+      "formation": "4-3-3",
+      "play_style": "Attacking",
       "training_focus": "Physical",
       "training_intensity": "Medium",
       "training_schedule": "Balanced",
@@ -344,7 +344,7 @@
         "youth": 15,
         "stadium": 11
       },
-      "formation": "4-4-2",
+      "formation": "3-4-3",
       "play_style": "Balanced",
       "training_focus": "Physical",
       "training_intensity": "Medium",
@@ -389,7 +389,7 @@
         "youth": 17,
         "stadium": 10
       },
-      "formation": "4-4-2",
+      "formation": "4-3-3",
       "play_style": "Balanced",
       "training_focus": "Physical",
       "training_intensity": "Medium",
@@ -435,7 +435,7 @@
         "stadium": 15
       },
       "formation": "4-4-2",
-      "play_style": "Balanced",
+      "play_style": "Attacking",
       "training_focus": "Physical",
       "training_intensity": "Medium",
       "training_schedule": "Balanced",
@@ -569,7 +569,7 @@
         "youth": 20,
         "stadium": 18
       },
-      "formation": "4-4-2",
+      "formation": "4-2-3-1",
       "play_style": "Balanced",
       "training_focus": "Physical",
       "training_intensity": "Medium",
@@ -614,8 +614,8 @@
         "youth": 18,
         "stadium": 19
       },
-      "formation": "4-4-2",
-      "play_style": "Balanced",
+      "formation": "4-3-3",
+      "play_style": "Attacking",
       "training_focus": "Physical",
       "training_intensity": "Medium",
       "training_schedule": "Balanced",
@@ -659,7 +659,7 @@
         "youth": 14,
         "stadium": 12
       },
-      "formation": "4-4-2",
+      "formation": "4-2-3-1",
       "play_style": "Balanced",
       "training_focus": "Physical",
       "training_intensity": "Medium",
@@ -749,8 +749,8 @@
         "youth": 12,
         "stadium": 16
       },
-      "formation": "4-4-2",
-      "play_style": "Balanced",
+      "formation": "4-3-3",
+      "play_style": "CounterAttacks",
       "training_focus": "Physical",
       "training_intensity": "Medium",
       "training_schedule": "Balanced",
@@ -794,7 +794,7 @@
         "youth": 13,
         "stadium": 11
       },
-      "formation": "4-4-2",
+      "formation": "5-3-2",
       "play_style": "Balanced",
       "training_focus": "Physical",
       "training_intensity": "Medium",
@@ -839,7 +839,7 @@
         "youth": 13,
         "stadium": 13
       },
-      "formation": "4-4-2",
+      "formation": "4-2-3-1",
       "play_style": "Balanced",
       "training_focus": "Physical",
       "training_intensity": "Medium",
@@ -884,7 +884,7 @@
         "youth": 16,
         "stadium": 17
       },
-      "formation": "4-4-2",
+      "formation": "4-2-3-1",
       "play_style": "Balanced",
       "training_focus": "Physical",
       "training_intensity": "Medium",
@@ -929,8 +929,8 @@
         "youth": 11,
         "stadium": 19
       },
-      "formation": "4-4-2",
-      "play_style": "Balanced",
+      "formation": "5-3-2",
+      "play_style": "Attacking",
       "training_focus": "Physical",
       "training_intensity": "Medium",
       "training_schedule": "Balanced",
