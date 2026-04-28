@@ -1,6 +1,5 @@
 use crate::game::Game;
 use crate::messages;
-use crate::suspensions;
 use domain::league::{
     CompactMatchEvent, CompactMatchReport, CompactTeamMatchStats, FixtureStatus, GoalEvent,
     MatchResult,
@@ -454,9 +453,35 @@ fn apply_player_stats(
     }
 }
 
+/// Decrement suspension counters for all players in both teams after a league match.
+/// This is called after each league match to reduce suspension counters by 1.
+fn decrement_suspensions_after_match(
+    game: &mut Game,
+    home_team_id: &str,
+    away_team_id: &str,
+) {
+    for player in game.players.iter_mut() {
+        let Some(team_id) = player.team_id.clone() else {
+            continue;
+        };
+        if team_id == home_team_id || team_id == away_team_id {
+            if player.suspension_games_remaining > 0 {
+                player.suspension_games_remaining -= 1;
+                log::info!(
+                    "[suspension] {} (team {}) served 1 match ban, {} remaining",
+                    player.match_name,
+                    team_id,
+                    player.suspension_games_remaining
+                );
+            }
+        }
+    }
+}
+
 /// Apply suspensions after a league match.
 /// Red card = 1 match ban
 /// 3 accumulated yellow cards = 1 match ban
+/// Also decrements existing suspensions for players who participated.
 /// Friendly matches don't count.
 fn apply_suspensions_after_match(
     game: &mut Game,
@@ -469,6 +494,10 @@ fn apply_suspensions_after_match(
         return;
     }
 
+    // First: decrement existing suspensions for all players in both teams
+    decrement_suspensions_after_match(game, home_team_id, away_team_id);
+
+    // Then: apply new suspensions from this match's cards
     for player in game.players.iter_mut() {
         let Some(team_id) = player.team_id.clone() else {
             continue;
