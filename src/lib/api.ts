@@ -31,14 +31,38 @@ export async function invoke<T = unknown>(
     body: args ? JSON.stringify(args) : JSON.stringify({}),
   });
 
+  // Read response as text first to handle errors properly
+  const responseText = await response.text();
+  
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || `HTTP ${response.status}: ${response.statusText}`);
+    // Try to parse error as JSON, otherwise use raw text
+    let errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const errorJson = JSON.parse(responseText);
+      errorMsg = errorJson.error || errorJson.message || responseText;
+    } catch {
+      // If it's HTML (starts with <), extract just the error message
+      if (responseText.trim().startsWith('<')) {
+        console.error("[API Error] Server returned HTML instead of JSON:", responseText.slice(0, 500));
+        errorMsg = `Server error (${response.status}). Check console for details.`;
+      } else {
+        errorMsg = responseText || errorMsg;
+      }
+    }
+    throw new Error(errorMsg);
   }
 
-  const data = await response.json();
+  // Parse successful JSON response
+  if (!responseText.trim()) {
+    return {} as T;
+  }
   
-  return data as T;
+  try {
+    return JSON.parse(responseText) as T;
+  } catch (e) {
+    console.error("[API] Failed to parse response as JSON:", responseText.slice(0, 500));
+    throw new Error(`Invalid JSON response from ${cmd}`);
+  }
 }
 
 /**

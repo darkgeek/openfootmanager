@@ -314,6 +314,7 @@ export default function MainMenu() {
         };
         // Store the raw JSON in sessionStorage so we can write it to a temp path
         sessionStorage.setItem("imported_world_json", json);
+        console.log("[import file] Stored JSON in sessionStorage, length:", json.length);
         setWorldDatabases((prev) => {
           const filtered = prev.filter((d) => d.source !== "imported");
           return [...filtered, info];
@@ -345,6 +346,13 @@ export default function MainMenu() {
         worldJson = sessionStorage.getItem("imported_world_json")!;
         worldSource = undefined;
       }
+
+      console.log("[handleStartGame] Calling start_new_game with:", {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        worldSource,
+        worldJsonLength: worldJson?.length
+      });
 
       const game = await invoke<GameStateData>("start_new_game", {
         firstName: formData.firstName,
