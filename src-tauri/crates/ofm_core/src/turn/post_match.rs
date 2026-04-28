@@ -515,13 +515,15 @@ fn apply_suspensions_after_match(
         let yellows_in_match = ps.map(|s| s.yellow_cards).unwrap_or(0);
         let reds_in_match = ps.map(|s| s.red_cards).unwrap_or(0);
 
-        // Apply red card suspension
+        // Apply red card suspension (one ban per red card)
         if reds_in_match > 0 {
-            player.suspension_games_remaining += 1;
+            player.suspension_games_remaining += reds_in_match;
             log::info!(
-                "[suspension] {} (team {}) gets 1-match ban for red card",
+                "[suspension] {} (team {}) gets {}-match ban for {} red card(s)",
                 player.match_name,
-                team_id
+                team_id,
+                reds_in_match,
+                reds_in_match
             );
         }
 
