@@ -74,6 +74,117 @@ fn convert_keys_to_camel(value: &Value) -> Value {
     }
 }
 
+/// Balance team strengths for a fair challenge.
+/// - User's team: reduced overall ratings (target bottom 3-5 in league)
+/// - AI teams: boosted overall ratings to create competition
+fn balance_team_strengths(game: &mut Game, user_team_id: &str) {
+    use domain::player::Player;
+    
+    // Calculate current average team strength
+    let mut team_strengths: Vec<(String, f64)> = game.teams.iter()
+        .map(|t| {
+            let team_players: Vec<&Player> = game.players.iter()
+                .filter(|p| p.team_id.as_ref() == Some(&t.id))
+                .collect();
+            let avg_ovr = if team_players.is_empty() {
+                50.0
+            } else {
+                team_players.iter()
+                    .map(|p| calculate_player_overall(&p.attributes))
+                    .sum::<f64>() / team_players.len() as f64
+            };
+            (t.id.clone(), avg_ovr)
+        })
+        .collect();
+    
+    // Sort by strength to find the weakest teams
+    team_strengths.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+    
+    // Target: user's team should be around 15th-17th (lower mid-table)
+    // Weaker teams should have lower ratings
+    let user_strength_idx = team_strengths.iter()
+        .position(|(id, _)| id == user_team_id)
+        .unwrap_or(0);
+    
+    // Adjust player attributes to balance
+    for player in game.players.iter_mut() {
+        if player.team_id.is_none() {
+            continue;
+        }
+        
+        let is_user_team = player.team_id.as_ref().map(|s| s.as_str()) == Some(&*user_team_id);
+        let team_idx = team_strengths.iter()
+            .position(|(id, _)| id == player.team_id.as_ref().unwrap());
+        
+        // Determine adjustment based on position in strength ranking
+        let adjustment = if is_user_team {
+            // User's team: reduce by 5-10 points
+            -6
+        } else {
+            // AI teams: boost based on their position
+            // Weaker teams get smaller boosts, stronger teams get bigger boosts
+            let team_idx = team_idx.unwrap_or(0) as f64;
+            let total_teams = team_strengths.len() as f64;
+            // Teams ranked lower get more boost to catch up
+            let boost = ((total_teams - team_idx) / total_teams * 8.0) as i8;
+            boost.min(5).max(1)
+        };
+        
+        if adjustment == 0 {
+            continue;
+        }
+        
+        // Apply adjustment to key attributes
+        let attrs = &mut player.attributes;
+        if adjustment > 0 {
+            // Boost: distribute across 3-4 attributes
+            let attrs_to_boost = if attrs.pace < 90 { &mut attrs.pace } else { &mut attrs.shooting };
+            *attrs_to_boost = ((*attrs_to_boost as i8) + adjustment).clamp(1, 99) as u8;
+            
+            let attrs_to_boost2 = if attrs.passing < 90 { &mut attrs.passing } else { &mut attrs.dribbling };
+            *attrs_to_boost2 = ((*attrs_to_boost2 as i8) + adjustment).clamp(1, 99) as u8;
+            
+            let attrs_to_boost3 = if attrs.stamina < 90 { &mut attrs.stamina } else { &mut attrs.strength };
+            *attrs_to_boost3 = ((*attrs_to_boost3 as i8) + adjustment / 2).clamp(1, 99) as u8;
+        } else {
+            // Reduce: distribute across 3-4 attributes
+            let attrs_to_reduce = if attrs.pace > 20 { &mut attrs.pace } else { &mut attrs.shooting };
+            *attrs_to_reduce = ((*attrs_to_reduce as i8) + adjustment).clamp(1, 99) as u8;
+            
+            let attrs_to_reduce2 = if attrs.passing > 20 { &mut attrs.passing } else { &mut attrs.dribbling };
+            *attrs_to_reduce2 = ((*attrs_to_reduce2 as i8) + adjustment).clamp(1, 99) as u8;
+            
+            let attrs_to_reduce3 = if attrs.stamina > 20 { &mut attrs.stamina } else { &mut attrs.strength };
+            *attrs_to_reduce3 = ((*attrs_to_reduce3 as i8) + adjustment / 2).clamp(1, 99) as u8;
+        }
+        
+        // Update market value based on new overall
+        let new_overall = calculate_player_overall(&player.attributes);
+        let age = estimate_player_age(&player.date_of_birth);
+        let age_factor = if age <= 23 { 1.5 } else if age <= 28 { 1.2 } else if age <= 32 { 0.8 } else { 0.4 };
+        player.market_value = ((new_overall as f64).powi(2) * 500.0 * age_factor) as u64;
+        player.wage = (player.market_value / 200).max(500) as u32;
+    }
+    
+    log::info!("[balance] Team strengths adjusted: user team weakened, AI teams boosted");
+}
+
+fn calculate_player_overall(attrs: &domain::player::PlayerAttributes) -> f64 {
+    (attrs.pace as f64 + attrs.stamina as f64 + attrs.strength as f64
+        + attrs.passing as f64 + attrs.shooting as f64 + attrs.tackling as f64
+        + attrs.dribbling as f64 + attrs.defending as f64 + attrs.positioning as f64
+        + attrs.vision as f64 + attrs.decisions as f64) / 11.0
+}
+
+fn estimate_player_age(dob: &str) -> u32 {
+    let parts: Vec<&str> = dob.split('-').collect();
+    if parts.is_empty() {
+        return 25;
+    }
+    let birth_year: u32 = parts[0].parse().unwrap_or(2000);
+    2026u32.saturating_sub(birth_year)
+}
+
 /// Serialize a value to JSON and convert keys to camelCase for frontend compatibility
 fn to_camel_json<T: Serialize>(value: &T) -> Result<Value, String> {
     let json = serde_json::to_value(value).map_err(|e| e.to_string())?;
@@ -330,6 +441,9 @@ pub async fn select_team(
     if let Some(t) = game.teams.iter_mut().find(|t| t.id == team_id) {
         t.manager_id = Some(game.manager.id.clone());
     }
+
+    // Balance teams: weaken user's team and boost AI teams
+    balance_team_strengths(&mut game, &team_id);
 
     let season_start = game.clock.current_date + Duration::days(30);
     let team_ids: Vec<String> = game.teams.iter().map(|t| t.id.clone()).collect();

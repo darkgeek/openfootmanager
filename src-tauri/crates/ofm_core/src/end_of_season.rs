@@ -36,12 +36,11 @@ fn calculate_overall(attrs: &PlayerAttributes) -> f64 {
 
 /// Apply season-end growth for all players.
 /// This simulates natural development over the off-season:
-/// - Young players (age <= 24): grow based on current overall
-/// - Prime players (25-30): small growth
-/// - Declining players (31-34): maintenance
-/// - Old players (35+): slight decline
+/// - AI teams get boosted growth to catch up with user
+/// - User team gets reduced growth to increase challenge
 fn apply_season_end_growth(game: &mut Game) {
     let current_year = game.clock.current_date.format("%Y").to_string().parse().unwrap_or(2026);
+    let user_team_id = game.manager.team_id.clone().unwrap_or_default();
     
     for player in game.players.iter_mut() {
         // Skip free agents or players without a team
@@ -51,9 +50,11 @@ fn apply_season_end_growth(game: &mut Game) {
         
         let age = estimate_age(&player.date_of_birth, current_year);
         let current_overall = calculate_overall(&player.attributes);
+        let is_user_team = player.team_id.as_ref() == Some(&user_team_id);
         
-        // Calculate growth based on age
-        let (growth_factor, decline_factor) = match age {
+        // AI teams get boosted growth, user team gets reduced growth
+        // This creates a "catch-up" mechanic for AI
+        let (base_growth_factor, decline_factor) = match age {
             0..=21 => (0.8, 0.0),      // Young: significant growth
             22..=24 => (0.5, 0.0),     // Early career: moderate growth
             25..=28 => (0.2, 0.0),     // Peak: small growth
@@ -62,6 +63,13 @@ fn apply_season_end_growth(game: &mut Game) {
             _ => (0.0, 0.3),           // Old: start declining
         };
         
+        // Apply multipliers: AI teams get 1.5x growth, user gets 0.5x growth
+        let growth_multiplier = if is_user_team { 0.4 } else { 1.6 };
+        let decline_multiplier = if is_user_team { 1.3 } else { 0.7 };
+        
+        let growth_factor = base_growth_factor * growth_multiplier;
+        let actual_decline = decline_factor * decline_multiplier;
+        
         // Calculate the number to add/subtract from each attribute
         let growth_amount = if growth_factor > 0.0 {
             ((current_overall / 100.0) * growth_factor).max(0.5) as i8
@@ -69,8 +77,8 @@ fn apply_season_end_growth(game: &mut Game) {
             0
         };
         
-        let decline_amount = if decline_factor > 0.0 {
-            ((current_overall / 100.0) * decline_factor).max(0.3) as i8
+        let decline_amount = if actual_decline > 0.0 {
+            ((current_overall / 100.0) * actual_decline).max(0.3) as i8
         } else {
             0
         };
