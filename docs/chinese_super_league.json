@@ -750,7 +750,7 @@
         "stadium": 16
       },
       "formation": "4-3-3",
-      "play_style": "CounterAttacks",
+      "play_style": "Counter",
       "training_focus": "Physical",
       "training_intensity": "Medium",
       "training_schedule": "Balanced",
