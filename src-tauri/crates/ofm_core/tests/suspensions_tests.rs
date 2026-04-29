@@ -567,3 +567,23 @@ fn injured_players_serve_suspension_too() {
         "Injury should remain"
     );
 }
+
+/// Second yellow card (two yellows = one red) should trigger suspension.
+/// SecondYellow is recorded as 1 yellow + 1 red in player_stats.
+#[test]
+fn second_yellow_gives_one_match_suspension() {
+    let mut game = make_game_with_two_teams();
+    // Second yellow = 1 yellow card (the second one) + 1 red card
+    // This simulates the match report where SecondYellow was recorded
+    let report = report_with_cards(
+        vec![("p1_def0", 1, 1)], // 1 yellow + 1 red (SecondYellow)
+        vec![],
+    );
+    turn::apply_match_report(&mut game, 0, "team1", "team2", &report);
+
+    let player = game.players.iter().find(|p| p.id == "p1_def0").unwrap();
+    assert_eq!(
+        player.suspension_games_remaining, 1,
+        "Player with SecondYellow (1 yellow + 1 red) should have 1 match suspension"
+    );
+}

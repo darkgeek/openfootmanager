@@ -245,11 +245,21 @@ impl MatchReport {
                         ps.fouls_committed += 1;
                     }
                 }
-                EventType::YellowCard | EventType::SecondYellow => {
+                EventType::YellowCard => {
                     stats.yellow_cards += 1;
                     if !pid.is_empty() {
                         let ps = player_stats.entry(pid.to_string()).or_default();
                         ps.yellow_cards += 1;
+                    }
+                }
+                EventType::SecondYellow => {
+                    // Second yellow = red card, counts as both a yellow AND a red
+                    stats.yellow_cards += 1;
+                    stats.red_cards += 1;
+                    if !pid.is_empty() {
+                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        ps.yellow_cards += 1;
+                        ps.red_cards += 1;
                     }
                 }
                 EventType::RedCard => {
