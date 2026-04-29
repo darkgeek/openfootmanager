@@ -253,12 +253,10 @@ impl MatchReport {
                     }
                 }
                 EventType::SecondYellow => {
-                    // Second yellow = red card, counts as both a yellow AND a red
-                    stats.yellow_cards += 1;
+                    // Second yellow = red card, only red_cards increases (yellow already counted)
                     stats.red_cards += 1;
                     if !pid.is_empty() {
                         let ps = player_stats.entry(pid.to_string()).or_default();
-                        ps.yellow_cards += 1;
                         ps.red_cards += 1;
                     }
                 }
