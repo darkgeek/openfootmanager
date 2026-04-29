@@ -90,6 +90,21 @@ export default function TeamProfileRosterCard({
                       <span className="font-semibold text-sm text-gray-800 dark:text-gray-200 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                         {player.full_name}
                       </span>
+                      {player.injury && (
+                        <div className="text-xs text-red-500 dark:text-red-400 mt-0.5">
+                          {t("common.injured")} ({player.injury.days_remaining}d)
+                        </div>
+                      )}
+                      {player.suspension_games_remaining > 0 && (
+                        <div className="text-xs text-amber-500 dark:text-amber-400 mt-0.5">
+                          {t("common.suspended")} ({player.suspension_games_remaining}g)
+                        </div>
+                      )}
+                      {player.accumulated_yellow_cards > 0 && (
+                        <div className="text-xs text-yellow-600 dark:text-yellow-400 mt-0.5">
+                          {player.accumulated_yellow_cards} {t("home.yellowCardsShort", "YC")}
+                        </div>
+                      )}
                     </td>
                     <td className="py-3 px-5 text-sm text-gray-600 dark:text-gray-400 tabular-nums">
                       {age}

@@ -178,6 +178,7 @@
     "gameSuspended": "{{count}} game(s) suspended",
     "playersWithCards": "Card Status",
     "yellowCards": "{{count}} yellow card(s)",
+    "yellowCardsShort": "YC",
     "yellowCardsAccumulated": "{{count}} yellow card(s) accumulated",
     "warningNearSuspension": "{{count}} yellow card(s) - 1 more = suspension!"
   },
