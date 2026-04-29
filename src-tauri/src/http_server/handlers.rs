@@ -3,7 +3,7 @@
 
 use axum::{extract::State, Json};
 use chrono::Datelike;
-use log::info;
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -663,6 +663,14 @@ pub async fn advance_time_with_mode(
             });
             for capture in captures {
                 state.state_manager.append_stats_state(capture);
+            }
+            
+            // Auto-save after instant simulation (includes all match suspensions/results)
+            if let Some(ref save_id) = state.state_manager.get_save_id() {
+                let mut sm = state.save_manager.lock().map_err(|e: std::sync::PoisonError<_>| e.to_string())?;
+                sm.save_game(&game, save_id).map_err(|e| format!("Failed to auto-save: {}", e))?;
+                let stats_state = state.state_manager.get_stats_state(|s| s.clone()).unwrap_or_default();
+                sm.save_stats_state(&stats_state, save_id).map_err(|e| format!("Failed to auto-save stats: {}", e))?;
             }
             state.state_manager.set_game(game.clone());
             
@@ -1834,7 +1842,16 @@ pub async fn finish_live_match(State(state): State<AppState>) -> Result<Json<Val
     // Finish the live match day (advance time, generate news, etc.)
     turn::finish_live_match_day(&mut game);
     
-    // Save the updated game
+    // Save the game to the database so suspensions/results persist across server restarts
+    if let Some(ref save_id) = state.state_manager.get_save_id() {
+        let mut sm = state.save_manager.lock().map_err(|e: std::sync::PoisonError<_>| e.to_string())?;
+        sm.save_game(&game, save_id).map_err(|e| format!("Failed to auto-save: {}", e))?;
+        let stats_state = state.state_manager.get_stats_state(|s| s.clone()).unwrap_or_default();
+        sm.save_stats_state(&stats_state, save_id).map_err(|e| format!("Failed to auto-save stats: {}", e))?;
+        debug!("[finish_live_match] auto-saved game to {}", save_id);
+    }
+    
+    // Update in-memory state
     state.state_manager.set_game(game.clone());
     
     // Build round summary
