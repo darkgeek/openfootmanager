@@ -193,7 +193,9 @@ pub fn randomize_ai_training_focuses(game: &mut Game, user_team_id: &str) {
         
         // Randomize AI team training focus
         let focus_idx = rng.random_range(0..focuses.len());
-        team.training_focus = focuses[focus_idx].clone();
+        let new_focus = focuses[focus_idx].clone();
+        team.training_focus = new_focus.clone();
+        team.preferred_training_focus = new_focus; // Remember preference
         
         // Set random training intensity
         let intensity = match rng.random_range(0..3) {

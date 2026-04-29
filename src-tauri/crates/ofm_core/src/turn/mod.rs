@@ -91,6 +91,9 @@ where
         crate::training_report::generate_monthly_training_report(game);
     }
 
+    // AI team training management: auto-adjust focus when condition is low
+    crate::training::ai_manage_team_condition(game);
+
     news::generate_weekly_digest_news(game, &today);
     news::generate_pre_match_messages(game, &today);
 

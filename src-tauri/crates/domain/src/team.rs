@@ -40,6 +40,9 @@ pub struct Team {
     pub training_intensity: TrainingIntensity,
     #[serde(default)]
     pub training_schedule: TrainingSchedule,
+    /// AI teams remember their preferred training focus to switch back after recovery
+    #[serde(default)]
+    pub preferred_training_focus: TrainingFocus,
 
     // Club info
     pub founded_year: u32,
@@ -274,6 +277,7 @@ impl Team {
             training_focus: TrainingFocus::default(),
             training_intensity: TrainingIntensity::default(),
             training_schedule: TrainingSchedule::default(),
+            preferred_training_focus: TrainingFocus::Physical,
             training_groups: Vec::new(),
             founded_year: 1900,
             colors: TeamColors {

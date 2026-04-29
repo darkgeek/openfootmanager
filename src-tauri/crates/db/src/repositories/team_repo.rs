@@ -159,6 +159,7 @@ fn row_to_team(row: &rusqlite::Row) -> rusqlite::Result<Team> {
         training_focus: parse_training_focus(&training_focus_str),
         training_intensity: parse_training_intensity(&training_intensity_str),
         training_schedule: parse_training_schedule(&training_schedule_str),
+        preferred_training_focus: parse_training_focus(&training_focus_str),
         training_groups: serde_json::from_str(&training_groups_json).unwrap_or_default(),
         founded_year: row.get(20)?,
         colors: TeamColors {
