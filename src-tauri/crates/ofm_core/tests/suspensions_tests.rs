@@ -538,3 +538,32 @@ fn accumulated_yellows_reset_properly() {
         "Accumulated yellows should reset to 0, not 1"
     );
 }
+
+/// Injured players still serve their suspension when missing matches
+#[test]
+fn injured_players_serve_suspension_too() {
+    let mut game = make_game_with_two_teams();
+
+    // Player has suspension AND is injured
+    if let Some(p) = game.players.iter_mut().find(|p| p.id == "p1_def0") {
+        p.suspension_games_remaining = 2;
+        p.injury = Some(domain::player::Injury {
+            name: "Hamstring".to_string(),
+            days_remaining: 10, // Will miss multiple matches
+        });
+    }
+
+    // Simulate match (player won't play due to injury, but suspension still decrements)
+    let report = report_with_cards(vec![], vec![]);
+    turn::apply_match_report(&mut game, 0, "team1", "team2", &report);
+
+    let player = game.players.iter().find(|p| p.id == "p1_def0").unwrap();
+    assert_eq!(
+        player.suspension_games_remaining, 1,
+        "Suspension should decrement even though player is injured"
+    );
+    assert!(
+        player.injury.is_some(),
+        "Injury should remain"
+    );
+}

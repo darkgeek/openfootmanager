@@ -159,8 +159,14 @@ pub fn apply_match_report_with_capture<F>(
     // Update player season stats from the engine report
     apply_player_stats(game, report, home_team_id, away_team_id);
     
-    // Apply suspensions (red cards and accumulated yellows)
-    apply_suspensions_after_match(game, report, home_team_id, away_team_id, !counts_for_standings);
+    // Apply new suspensions from this match's cards (red cards and accumulated yellows)
+    // NOTE: Only apply for league matches, not friendlies
+    if counts_for_standings {
+        // First decrement all existing suspensions (injury doesn't affect suspension)
+        decrement_suspensions_for_league_match(game, home_team_id, away_team_id);
+        // Then apply any new suspensions from cards in this match
+        apply_new_card_suspensions(game, report, home_team_id, away_team_id);
+    }
     
     resolve_post_match_promises(game, report, home_team_id, away_team_id);
 
@@ -455,7 +461,13 @@ fn apply_player_stats(
 
 /// Decrement suspension counters for all players in both teams after a league match.
 /// This is called after each league match to reduce suspension counters by 1.
-fn decrement_suspensions_after_match(
+///
+/// Unlike injury, suspension is NOT served by "playing" — it's served by missing league
+/// matches. So injured players who miss the match still serve their suspension for that
+/// match (the ban counts down regardless of injury status).
+///
+/// Friendly matches don't affect suspensions.
+fn decrement_suspensions_for_league_match(
     game: &mut Game,
     home_team_id: &str,
     away_team_id: &str,
@@ -478,26 +490,16 @@ fn decrement_suspensions_after_match(
     }
 }
 
-/// Apply suspensions after a league match.
-/// Red card = 1 match ban
+/// Apply new suspensions from red and yellow cards received in this match.
+/// Red card = 1 match ban per card
 /// 3 accumulated yellow cards = 1 match ban
-/// Also decrements existing suspensions for players who participated.
-/// Friendly matches don't count.
-fn apply_suspensions_after_match(
+/// Does NOT decrement existing suspensions — that's done separately.
+fn apply_new_card_suspensions(
     game: &mut Game,
     report: &engine::MatchReport,
     home_team_id: &str,
     away_team_id: &str,
-    is_friendly: bool,
 ) {
-    if is_friendly {
-        return;
-    }
-
-    // First: decrement existing suspensions for all players in both teams
-    decrement_suspensions_after_match(game, home_team_id, away_team_id);
-
-    // Then: apply new suspensions from this match's cards
     for player in game.players.iter_mut() {
         let Some(team_id) = player.team_id.clone() else {
             continue;
