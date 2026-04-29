@@ -175,7 +175,11 @@
     "unavailablePlayers": "Unavailable Players",
     "daysUnavailable": "{{count}} day(s) remaining",
     "suspendedPlayers": "Suspended Players",
-    "gameSuspended": "{{count}} game(s) suspended"
+    "gameSuspended": "{{count}} game(s) suspended",
+    "playersWithCards": "Card Status",
+    "yellowCards": "{{count}} yellow card(s)",
+    "yellowCardsAccumulated": "{{count}} yellow card(s) accumulated",
+    "warningNearSuspension": "{{count}} yellow card(s) - 1 more = suspension!"
   },
   "season": {
     "preseasonStatus": "Preseason Status",

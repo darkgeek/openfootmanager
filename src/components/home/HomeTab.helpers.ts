@@ -44,6 +44,7 @@ export interface HomeRosterOverview {
   hotPlayers: PlayerData[];
   unavailablePlayers: PlayerData[];
   suspendedPlayers: PlayerData[];
+  playersWithCards: PlayerData[];
 }
 
 export interface HomeRecentResult {
@@ -183,6 +184,21 @@ export function getHomeRosterOverview(
         leftPlayer.full_name.localeCompare(rightPlayer.full_name)
       );
     });
+  
+  // Players with yellow cards (accumulated) or red cards - includes those already suspended
+  const playersWithCards = roster
+    .filter((player) => player.accumulated_yellow_cards > 0 || player.suspension_games_remaining > 0)
+    .sort((leftPlayer, rightPlayer) => {
+      // Sort by: suspended first (most games), then by yellow cards, then by name
+      const leftSuspended = leftPlayer.suspension_games_remaining > 0 ? 1000 + leftPlayer.suspension_games_remaining : 0;
+      const rightSuspended = rightPlayer.suspension_games_remaining > 0 ? 1000 + rightPlayer.suspension_games_remaining : 0;
+      if (leftSuspended !== rightSuspended) {
+        return rightSuspended - leftSuspended;
+      }
+      return (rightPlayer.accumulated_yellow_cards ?? 0) - (leftPlayer.accumulated_yellow_cards ?? 0) ||
+        leftPlayer.full_name.localeCompare(rightPlayer.full_name);
+    });
+  
   const hotPlayers = roster
     .filter((player) => player.morale >= 80 && !player.injury && player.suspension_games_remaining === 0)
     .sort((leftPlayer, rightPlayer) => rightPlayer.morale - leftPlayer.morale)
@@ -200,6 +216,7 @@ export function getHomeRosterOverview(
     hotPlayers,
     unavailablePlayers,
     suspendedPlayers,
+    playersWithCards,
   };
 }
 

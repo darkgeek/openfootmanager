@@ -156,6 +156,7 @@ function createGameState(): GameStateData {
         morale: 75,
         injury: null,
   suspension_games_remaining: 0,
+    accumulated_yellow_cards: 0,
         team_id: "team-1",
         contract_end: "2026-10-15",
         wage: 12000,
