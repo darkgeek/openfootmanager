@@ -1332,11 +1332,24 @@ pub async fn preview_transfer_bid_financial_impact(State(state): State<AppState>
     Ok(Json(serde_json::json!({})))
 }
 
-pub async fn respond_to_offer(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
-    state.state_manager
+pub async fn respond_to_offer(State(state): State<AppState>, Json(params): Json<Value>) -> Result<Json<Game>, String> {
+    let player_id = params.get("playerId").and_then(|v| v.as_str()).ok_or("missing playerId")?;
+    let offer_id = params.get("offerId").and_then(|v| v.as_str()).ok_or("missing offerId")?;
+    let accept = params.get("accept").and_then(|v| v.as_bool()).unwrap_or(false);
+
+    info!(
+        "[http] respond_to_offer: player_id={}, offer_id={}, accept={}",
+        player_id, offer_id, accept
+    );
+
+    let mut game = state.state_manager
         .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())
-        .map(Json)
+        .ok_or("No active game session".to_string())?;
+
+    ofm_core::transfers::respond_to_offer(&mut game, player_id, offer_id, accept)?;
+    state.state_manager.set_game(game.clone());
+
+    Ok(Json(game))
 }
 
 pub async fn counter_offer(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Value>, String> {
