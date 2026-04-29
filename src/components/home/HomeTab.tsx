@@ -25,6 +25,7 @@ import HomeRecentMessagesCard from "./HomeRecentMessagesCard";
 import HomeSquadOverviewCard from "./HomeSquadOverviewCard";
 import HomeSeasonStatusCard from "./HomeSeasonStatusCard";
 import HomeUnavailablePlayersCard from "./HomeUnavailablePlayersCard";
+import HomeSuspendedPlayersCard from "./HomeSuspendedPlayersCard";
 import {
   Dumbbell,
   Mail,
@@ -82,6 +83,7 @@ export default function HomeTab({
     exhaustedCount,
     hotPlayers,
     unavailablePlayers,
+    suspendedPlayers,
   } = getHomeRosterOverview(roster);
   const resolveInjuryName = (injuryName: string): string => {
     if (injuryName.includes(".")) {
@@ -336,6 +338,11 @@ export default function HomeTab({
           <HomeUnavailablePlayersCard
             players={unavailablePlayers}
             resolveInjuryName={resolveInjuryName}
+            onNavigate={onNavigate}
+          />
+
+          <HomeSuspendedPlayersCard
+            players={suspendedPlayers}
             onNavigate={onNavigate}
           />
 

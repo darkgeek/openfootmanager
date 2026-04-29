@@ -173,7 +173,9 @@
     "inProgress": "In Progress",
     "objectivesMet": "{{done}}/{{total}} objectives met — Board satisfaction: {{pct}}%",
     "unavailablePlayers": "Unavailable Players",
-    "daysUnavailable": "{{count}} day(s) remaining"
+    "daysUnavailable": "{{count}} day(s) remaining",
+    "suspendedPlayers": "Suspended Players",
+    "gameSuspended": "{{count}} game(s) suspended"
   },
   "season": {
     "preseasonStatus": "Preseason Status",
@@ -261,6 +263,7 @@
     "ga": "GA",
     "gd": "GD",
     "injured": "Injured",
+    "suspended": "Suspended",
     "back": "Back",
     "all": "All",
     "allPlayers": "All Players",
