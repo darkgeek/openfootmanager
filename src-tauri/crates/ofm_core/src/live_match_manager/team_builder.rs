@@ -25,11 +25,15 @@ pub(super) fn build_team_with_bench(game: &Game, team_id: &str) -> (TeamData, Ve
         None => ("Unknown".into(), "4-4-2".into(), PlayStyle::Balanced),
     };
 
-    // Collect all available (non-injured) players for this team
+    // Collect all available (non-injured, non-suspended) players for this team
     let available_players: Vec<&domain::player::Player> = game
         .players
         .iter()
-        .filter(|p| p.team_id.as_deref() == Some(team_id) && p.injury.is_none())
+        .filter(|p| {
+            p.team_id.as_deref() == Some(team_id)
+                && p.injury.is_none()
+                && p.suspension_games_remaining == 0
+        })
         .collect();
     let slots = formation_slots(&formation);
     let mut used_ids = std::collections::HashSet::new();

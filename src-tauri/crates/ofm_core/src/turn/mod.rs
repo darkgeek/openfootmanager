@@ -167,10 +167,28 @@ fn build_engine_team(game: &Game, team_id: &str) -> engine::TeamData {
         ),
     };
 
-    let players: Vec<engine::PlayerData> = game
+    // Filter to available players only (non-injured, non-suspended), then pick best 11
+    let available_players: Vec<_> = game
         .players
         .iter()
-        .filter(|p| p.team_id.as_deref() == Some(team_id))
+        .filter(|p| {
+            p.team_id.as_deref() == Some(team_id)
+                && p.injury.is_none()
+                && p.suspension_games_remaining == 0
+        })
+        .collect();
+
+    // Sort by overall rating and take top 11
+    let mut sorted = available_players.clone();
+    sorted.sort_by(|a, b| {
+        let ovr_a = crate::player_rating::natural_ovr(a);
+        let ovr_b = crate::player_rating::natural_ovr(b);
+        ovr_b.partial_cmp(&ovr_a).unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    let players: Vec<engine::PlayerData> = sorted
+        .into_iter()
+        .take(11)
         .map(|p| {
             let pos = match p.position.to_group_position() {
                 DomainPosition::Goalkeeper => engine::Position::Goalkeeper,
