@@ -57,6 +57,7 @@ const makePlayer = (
   condition: 100,
   morale: 80,
   injury: null,
+  suspension_games_remaining: 0,
   team_id: "team1",
   contract_end: "2027-06-30",
   wage: 1000,

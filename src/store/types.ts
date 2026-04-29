@@ -128,6 +128,7 @@ export interface PlayerData {
   condition: number;
   morale: number;
   injury: null | { name: string; days_remaining: number };
+  suspension_games_remaining: number;
   team_id: string | null;
   contract_end: string | null;
   wage: number;

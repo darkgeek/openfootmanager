@@ -315,11 +315,11 @@ export default function TacticsPitch({
                   <button
                     key={player.id}
                     type="button"
-                    draggable={!player.injury}
+                    draggable={!player.injury && player.suspension_games_remaining === 0}
                     data-testid={`pitch-bench-player-${player.id}`}
                     onClick={() => onLineupPlayerClick(player.id, "bench")}
                     onDragStart={(event) => {
-                      if (!player.injury) {
+                      if (!player.injury && player.suspension_games_remaining === 0) {
                         onDragStart(event, player.id, "bench", null);
                       }
                     }}
