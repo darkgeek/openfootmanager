@@ -1,4 +1,5 @@
 pub mod board_objectives;
+pub mod ai_team_management;
 pub mod clock;
 pub mod club;
 pub mod contract_wage_policy;

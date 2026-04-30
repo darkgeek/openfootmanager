@@ -410,6 +410,9 @@ pub fn process_end_of_season(game: &mut Game) -> EndOfSeasonSummary {
     // Apply season-end growth for all players
     apply_season_end_growth(game);
 
+    // 5b. Replenish AI team squads for new season
+    crate::ai_team_management::ai_end_of_season_replenishment(game);
+
     // 6. Update manager career stats
     if let Some(standing) = &user_standing {
         let total_matches = standing.won + standing.drawn + standing.lost;

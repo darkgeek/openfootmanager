@@ -2,6 +2,7 @@ mod news;
 mod post_match;
 mod round_summary;
 
+use crate::ai_team_management;
 use crate::board_objectives;
 use crate::game::Game;
 use crate::player_events;
@@ -65,6 +66,15 @@ where
 
     crate::contracts::process_contract_expiries(game);
 
+    // AI team management: transfers and squad replenishment
+    if ai_team_management::transfer_window_is_open(game) {
+        // During transfer window: AI teams can buy players
+        ai_team_management::ai_transfer_activity(game);
+    } else {
+        // Outside transfer window: replenish squads with youth players
+        ai_team_management::ai_replenish_squad_offseason(game);
+    }
+
     // Weekly financial processing (wages, matchday income, warnings)
     crate::finances::process_weekly_finances(game);
 
@@ -113,6 +123,13 @@ pub fn finish_live_match_day(game: &mut Game) {
     generate_matchday_news(game, &today);
 
     crate::contracts::process_contract_expiries(game);
+
+    // AI team management: transfers and squad replenishment
+    if ai_team_management::transfer_window_is_open(game) {
+        ai_team_management::ai_transfer_activity(game);
+    } else {
+        ai_team_management::ai_replenish_squad_offseason(game);
+    }
 
     board_objectives::generate_objectives(game);
     board_objectives::update_objective_progress(game);
