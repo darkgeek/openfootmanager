@@ -4,9 +4,14 @@ import { useTranslation } from "react-i18next";
 
 import { calcAge, calcOvr, positionBadgeVariant } from "../../lib/helpers";
 import type { PlayerData } from "../../store/gameStore";
-import { TraitList } from "../TraitBadge";
-import { getOverallRatingClassName, type SortKey } from "./TacticsTab.helpers";
 import { Badge, Card, ProgressBar } from "../ui";
+import { TraitList } from "../TraitBadge";
+import Tooltip from "../ui/Tooltip";
+import { PlayerAttributesTooltip } from "./PlayerAttributesTooltip";
+import {
+  getOverallRatingClassName,
+  type SortKey,
+} from "./TacticsTab.helpers";
 import {
   getPreferredPositions,
   isPlayerOutOfPosition,
@@ -146,9 +151,18 @@ function renderTableRow(props: {
         </div>
       </td>
       <td className="px-4 py-2.5">
-        <div className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-primary-600 dark:text-gray-100 dark:group-hover:text-primary-400">
-          {player.full_name}
-        </div>
+        <Tooltip
+          content={
+            <PlayerAttributesTooltip
+              player={player}
+              activePosition={activePosition}
+            />
+          }
+        >
+          <div className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-primary-600 dark:text-gray-100 dark:group-hover:text-primary-400">
+            {player.full_name}
+          </div>
+        </Tooltip>
         {renderPreferredPositionMeta(player, t)}
       </td>
       <td className="px-4 py-2.5 text-sm tabular-nums text-gray-600 dark:text-gray-400">
