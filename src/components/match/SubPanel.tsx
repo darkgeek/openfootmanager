@@ -57,6 +57,9 @@ export function SubPanel({
     expectedCounts.Midfielder = parts[1];
     expectedCounts.Forward = parts[2];
   } else if (parts.length === 4) {
+    // 4-part formations: X-Y-Z-W
+    // X = defenders, Y = deep midfielders, Z = attacking midfielders, W = forwards
+    // For SubPanel display, combine Y+Z into Midfielder and W into Forward
     expectedCounts.Defender = parts[0];
     expectedCounts.Midfielder = parts[1] + parts[2];
     expectedCounts.Forward = parts[3];
