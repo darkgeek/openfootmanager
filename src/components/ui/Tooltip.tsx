@@ -33,8 +33,9 @@ export default function Tooltip({ content, children, className = "" }: TooltipPr
   };
 
   return (
-    <div ref={triggerRef} className={className}>
+    <div className={`relative inline-block ${className}`}>
       <div
+        ref={triggerRef}
         onMouseEnter={showTooltip}
         onMouseLeave={hideTooltip}
       >
