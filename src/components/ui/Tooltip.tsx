@@ -25,7 +25,6 @@ export default function Tooltip({ content, children }: TooltipProps) {
 
   return (
     <span
-      style={{ position: "relative", display: "inline-block" }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -47,10 +46,31 @@ export default function Tooltip({ content, children }: TooltipProps) {
           }}
           onMouseLeave={handleMouseLeave}
         >
-          <span className="bg-gray-900 dark:bg-navy-800 text-white text-xs rounded-lg shadow-xl p-3 max-w-xs border border-gray-700 dark:border-navy-600 whitespace-nowrap">
+          <span
+            className="rounded-lg p-3 max-w-xs whitespace-nowrap"
+            style={{
+              backgroundColor: "rgb(11, 15, 35)",
+              color: "white",
+              fontSize: "12px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              border: "1px solid rgb(75, 85, 99)",
+            }}
+          >
             {content}
           </span>
-          <span className="absolute left-1/2 -translate-x-1/2 -top-1 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-gray-900 dark:border-b-navy-800" />
+          <span
+            style={{
+              position: "absolute",
+              left: "50%",
+              bottom: "-6px",
+              transform: "translateX(-50%)",
+              width: 0,
+              height: 0,
+              borderLeft: "6px solid transparent",
+              borderRight: "6px solid transparent",
+              borderBottom: "6px solid rgb(11, 15, 35)",
+            }}
+          />
         </span>
       )}
     </span>
