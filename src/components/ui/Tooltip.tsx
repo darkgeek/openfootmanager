@@ -1,42 +1,20 @@
-import { useState, type ReactNode, type MouseEvent, type ReactElement } from "react";
-import { cloneElement, isValidElement } from "react";
+import { useState, type ReactNode } from "react";
 
 interface TooltipProps {
   content: ReactNode;
   children: ReactNode;
 }
 
-interface TooltipChildProps {
-  onMouseEnter?: (e: MouseEvent<HTMLElement>) => void;
-  onMouseLeave?: (e: MouseEvent<HTMLElement>) => void;
-  onMouseMove?: (e: MouseEvent<HTMLElement>) => void;
-}
-
 export default function Tooltip({ content, children }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const timeoutRef = { current: null as ReturnType<typeof setTimeout> | null };
 
-  const handleMouseMove = (e: MouseEvent<HTMLElement>) => {
-    console.log("[Tooltip] mouseMove:", { clientX: e.clientX, clientY: e.clientY, currentTarget: e.currentTarget.tagName });
-    setPosition({
-      x: e.clientX,
-      y: e.clientY + 16,
-    });
-  };
-
-  const handleMouseEnter = (e: MouseEvent<HTMLElement>) => {
-    console.log("[Tooltip] mouseEnter:", { clientX: e.clientX, clientY: e.clientY, currentTarget: e.currentTarget.tagName });
+  const handleMouseEnter = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    setPosition({
-      x: e.clientX,
-      y: e.clientY + 16,
-    });
     setIsVisible(true);
-    console.log("[Tooltip] position set to:", position);
   };
 
   const handleMouseLeave = () => {
@@ -45,48 +23,21 @@ export default function Tooltip({ content, children }: TooltipProps) {
     }, 100);
   };
 
-  if (!isValidElement(children)) {
-    return <>{children}</>;
-  }
-
-  const child = children as ReactElement<TooltipChildProps>;
-
-  const clonedChild = cloneElement(child, {
-    onMouseEnter: (e: MouseEvent<HTMLElement>) => {
-      const existing = child.props?.onMouseEnter;
-      if (typeof existing === "function") {
-        existing(e);
-      }
-      handleMouseEnter(e);
-    },
-    onMouseLeave: (e: MouseEvent<HTMLElement>) => {
-      const existing = child.props?.onMouseLeave;
-      if (typeof existing === "function") {
-        existing(e);
-      }
-      handleMouseLeave();
-    },
-    onMouseMove: (e: MouseEvent<HTMLElement>) => {
-      const existing = child.props?.onMouseMove;
-      if (typeof existing === "function") {
-        existing(e);
-      }
-      handleMouseMove(e);
-    },
-  });
-
-  console.log("[Tooltip] render, isVisible:", isVisible, "position:", position);
-
   return (
-    <>
-      {clonedChild}
+    <span
+      style={{ position: "relative", display: "inline-block" }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
       {isVisible && (
-        <div
-          className="fixed z-50 pointer-events-none"
+        <span
           style={{
-            left: `${position.x}px`,
-            top: `${position.y}px`,
+            position: "absolute",
+            left: "50%",
+            top: "100%",
             transform: "translateX(-50%)",
+            zIndex: 9999,
           }}
           onMouseEnter={() => {
             if (timeoutRef.current) {
@@ -96,12 +47,12 @@ export default function Tooltip({ content, children }: TooltipProps) {
           }}
           onMouseLeave={handleMouseLeave}
         >
-          <div className="bg-gray-900 dark:bg-navy-800 text-white text-xs rounded-lg shadow-xl p-3 max-w-xs border border-gray-700 dark:border-navy-600">
+          <span className="bg-gray-900 dark:bg-navy-800 text-white text-xs rounded-lg shadow-xl p-3 max-w-xs border border-gray-700 dark:border-navy-600 whitespace-nowrap">
             {content}
-          </div>
-          <div className="absolute left-1/2 -translate-x-1/2 -top-1 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-gray-900 dark:border-b-navy-800" />
-        </div>
+          </span>
+          <span className="absolute left-1/2 -translate-x-1/2 -top-1 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-gray-900 dark:border-b-navy-800" />
+        </span>
       )}
-    </>
+    </span>
   );
 }
