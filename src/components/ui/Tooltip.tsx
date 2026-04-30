@@ -9,7 +9,7 @@ interface TooltipProps {
 export default function Tooltip({ content, children }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const triggerRef = useRef<HTMLSpanElement>(null);
+  const triggerRef = useRef<HTMLElement>(null);
   const timeoutRef = { current: null as ReturnType<typeof setTimeout> | null };
 
   const updatePosition = () => {
@@ -37,13 +37,14 @@ export default function Tooltip({ content, children }: TooltipProps) {
     }, 100);
   };
 
-  // Clone the child element to add event handlers
+  // Clone the child element to add event handlers and ref
   const child = children as ReactElement<Record<string, unknown>>;
   const childProps = child.props || {} as Record<string, unknown>;
   
   const enhancedChild = (
     <child.type
       {...childProps}
+      ref={triggerRef}
       onMouseEnter={(e: MouseEvent) => {
         if (childProps.onMouseEnter) {
           (childProps.onMouseEnter as (e: MouseEvent) => void)(e);
@@ -61,9 +62,7 @@ export default function Tooltip({ content, children }: TooltipProps) {
 
   return (
     <>
-      <span ref={triggerRef}>
-        {enhancedChild}
-      </span>
+      {enhancedChild}
       {isVisible && createPortal(
         <div
           style={{
