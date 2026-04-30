@@ -1312,18 +1312,42 @@ pub async fn auto_select_set_pieces(State(state): State<AppState>, Json(_params)
         .map(Json)
 }
 
-pub async fn toggle_transfer_list(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
-    state.state_manager
+pub async fn toggle_transfer_list(State(state): State<AppState>, Json(params): Json<Value>) -> Result<Json<Game>, String> {
+    let player_id = params["playerId"]
+        .as_str()
+        .ok_or("Missing playerId")?
+        .to_string();
+    let mut game = state
+        .state_manager
         .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())
-        .map(Json)
+        .ok_or("No active game session")?;
+    
+    if let Some(p) = game.players.iter_mut().find(|p| p.id == player_id) {
+        p.transfer_listed = !p.transfer_listed;
+    } else {
+        return Err("Player not found".into());
+    }
+    state.state_manager.set_game(game.clone());
+    Ok(Json(game))
 }
 
-pub async fn toggle_loan_list(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
-    state.state_manager
+pub async fn toggle_loan_list(State(state): State<AppState>, Json(params): Json<Value>) -> Result<Json<Game>, String> {
+    let player_id = params["playerId"]
+        .as_str()
+        .ok_or("Missing playerId")?
+        .to_string();
+    let mut game = state
+        .state_manager
         .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())
-        .map(Json)
+        .ok_or("No active game session")?;
+    
+    if let Some(p) = game.players.iter_mut().find(|p| p.id == player_id) {
+        p.loan_listed = !p.loan_listed;
+    } else {
+        return Err("Player not found".into());
+    }
+    state.state_manager.set_game(game.clone());
+    Ok(Json(game))
 }
 
 pub async fn make_transfer_bid(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Value>, String> {
