@@ -14,26 +14,24 @@ interface TooltipChildProps {
 export default function Tooltip({ content, children }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const timeoutRef = { current: null as any };
+  const timeoutRef = { current: null as ReturnType<typeof setTimeout> | null };
 
   const handleMouseEnter = (e: MouseEvent<HTMLElement>) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
-    const target = e.currentTarget;
-    const rect = target.getBoundingClientRect();
-    setPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.bottom + 8,
-    });
+    // Use mouse coordinates directly
+    const x = e.clientX;
+    const y = e.clientY + 16;
+    setPosition({ x, y });
     setIsVisible(true);
   };
 
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
       setIsVisible(false);
-    }, 50);
+    }, 100);
   };
 
   if (!isValidElement(children)) {
@@ -70,6 +68,13 @@ export default function Tooltip({ content, children }: TooltipProps) {
             top: `${position.y}px`,
             transform: "translateX(-50%)",
           }}
+          onMouseEnter={() => {
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+              timeoutRef.current = null;
+            }
+          }}
+          onMouseLeave={handleMouseLeave}
         >
           <div className="bg-gray-900 dark:bg-navy-800 text-white text-xs rounded-lg shadow-xl p-3 max-w-xs border border-gray-700 dark:border-navy-600">
             {content}
