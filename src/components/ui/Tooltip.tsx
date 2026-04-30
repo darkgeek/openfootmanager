@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from "react";
+import { useState, useRef, type ReactNode, type ReactElement, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 
 interface TooltipProps {
   content: ReactNode;
@@ -7,13 +8,26 @@ interface TooltipProps {
 
 export default function Tooltip({ content, children }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const triggerRef = useRef<HTMLSpanElement>(null);
   const timeoutRef = { current: null as ReturnType<typeof setTimeout> | null };
+
+  const updatePosition = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.bottom + 8,
+      });
+    }
+  };
 
   const handleMouseEnter = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
+    updatePosition();
     setIsVisible(true);
   };
 
@@ -23,30 +37,45 @@ export default function Tooltip({ content, children }: TooltipProps) {
     }, 100);
   };
 
+  // Clone the child element to add event handlers
+  const child = children as ReactElement<Record<string, unknown>>;
+  const childProps = child.props || {} as Record<string, unknown>;
+  
+  const enhancedChild = (
+    <child.type
+      {...childProps}
+      onMouseEnter={(e: MouseEvent) => {
+        if (childProps.onMouseEnter) {
+          (childProps.onMouseEnter as (e: MouseEvent) => void)(e);
+        }
+        handleMouseEnter();
+      }}
+      onMouseLeave={(e: MouseEvent) => {
+        if (childProps.onMouseLeave) {
+          (childProps.onMouseLeave as (e: MouseEvent) => void)(e);
+        }
+        handleMouseLeave();
+      }}
+    />
+  );
+
   return (
-    <span
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {children}
-      {isVisible && (
-        <span
+    <>
+      <span ref={triggerRef}>
+        {enhancedChild}
+      </span>
+      {isVisible && createPortal(
+        <div
           style={{
-            position: "absolute",
-            left: "50%",
-            top: "100%",
+            position: "fixed",
+            left: `${position.x}px`,
+            top: `${position.y}px`,
             transform: "translateX(-50%)",
             zIndex: 9999,
+            pointerEvents: "none",
           }}
-          onMouseEnter={() => {
-            if (timeoutRef.current) {
-              clearTimeout(timeoutRef.current);
-              timeoutRef.current = null;
-            }
-          }}
-          onMouseLeave={handleMouseLeave}
         >
-          <span
+          <div
             className="rounded-lg p-3 max-w-xs whitespace-nowrap"
             style={{
               backgroundColor: "rgb(11, 15, 35)",
@@ -57,12 +86,12 @@ export default function Tooltip({ content, children }: TooltipProps) {
             }}
           >
             {content}
-          </span>
-          <span
+          </div>
+          <div
             style={{
               position: "absolute",
               left: "50%",
-              bottom: "-6px",
+              top: "-6px",
               transform: "translateX(-50%)",
               width: 0,
               height: 0,
@@ -71,8 +100,9 @@ export default function Tooltip({ content, children }: TooltipProps) {
               borderBottom: "6px solid rgb(11, 15, 35)",
             }}
           />
-        </span>
+        </div>,
+        document.body
       )}
-    </span>
+    </>
   );
 }
