@@ -18,7 +18,7 @@ export default function Tooltip({ content, children }: TooltipProps) {
   const timeoutRef = { current: null as ReturnType<typeof setTimeout> | null };
 
   const handleMouseMove = (e: MouseEvent<HTMLElement>) => {
-    // Use mouse move to track actual position
+    console.log("[Tooltip] mouseMove:", { clientX: e.clientX, clientY: e.clientY, currentTarget: e.currentTarget.tagName });
     setPosition({
       x: e.clientX,
       y: e.clientY + 16,
@@ -26,16 +26,17 @@ export default function Tooltip({ content, children }: TooltipProps) {
   };
 
   const handleMouseEnter = (e: MouseEvent<HTMLElement>) => {
+    console.log("[Tooltip] mouseEnter:", { clientX: e.clientX, clientY: e.clientY, currentTarget: e.currentTarget.tagName });
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    // Get initial position from mouse enter
     setPosition({
       x: e.clientX,
       y: e.clientY + 16,
     });
     setIsVisible(true);
+    console.log("[Tooltip] position set to:", position);
   };
 
   const handleMouseLeave = () => {
@@ -70,10 +71,11 @@ export default function Tooltip({ content, children }: TooltipProps) {
       if (typeof existing === "function") {
         existing(e);
       }
-      // Update tooltip position on mouse move
       handleMouseMove(e);
     },
   });
+
+  console.log("[Tooltip] render, isVisible:", isVisible, "position:", position);
 
   return (
     <>
