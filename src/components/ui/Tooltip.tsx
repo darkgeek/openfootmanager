@@ -9,6 +9,7 @@ interface TooltipProps {
 interface TooltipChildProps {
   onMouseEnter?: (e: MouseEvent<HTMLElement>) => void;
   onMouseLeave?: (e: MouseEvent<HTMLElement>) => void;
+  onMouseMove?: (e: MouseEvent<HTMLElement>) => void;
 }
 
 export default function Tooltip({ content, children }: TooltipProps) {
@@ -16,15 +17,24 @@ export default function Tooltip({ content, children }: TooltipProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const timeoutRef = { current: null as ReturnType<typeof setTimeout> | null };
 
+  const handleMouseMove = (e: MouseEvent<HTMLElement>) => {
+    // Use mouse move to track actual position
+    setPosition({
+      x: e.clientX,
+      y: e.clientY + 16,
+    });
+  };
+
   const handleMouseEnter = (e: MouseEvent<HTMLElement>) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    // Use mouse coordinates directly
-    const x = e.clientX;
-    const y = e.clientY + 16;
-    setPosition({ x, y });
+    // Get initial position from mouse enter
+    setPosition({
+      x: e.clientX,
+      y: e.clientY + 16,
+    });
     setIsVisible(true);
   };
 
@@ -54,6 +64,14 @@ export default function Tooltip({ content, children }: TooltipProps) {
         existing(e);
       }
       handleMouseLeave();
+    },
+    onMouseMove: (e: MouseEvent<HTMLElement>) => {
+      const existing = child.props?.onMouseMove;
+      if (typeof existing === "function") {
+        existing(e);
+      }
+      // Update tooltip position on mouse move
+      handleMouseMove(e);
     },
   });
 
