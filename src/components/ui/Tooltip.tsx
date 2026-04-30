@@ -12,17 +12,14 @@ export default function Tooltip({ content, children, className = "" }: TooltipPr
   const triggerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const showTooltip = () => {
+  const showTooltip = (e: React.MouseEvent) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setPosition({
-        x: rect.left + rect.width / 2,
-        y: rect.top,
-      });
-    }
+    setPosition({
+      x: e.clientX,
+      y: e.clientY,
+    });
     setIsVisible(true);
   };
 
@@ -45,8 +42,8 @@ export default function Tooltip({ content, children, className = "" }: TooltipPr
           className="fixed z-50 pointer-events-none"
           style={{
             left: position.x,
-            top: position.y - 10,
-            transform: "translate(-50%, -100%)",
+            top: position.y + 16,
+            transform: "translateX(-50%)",
           }}
           onMouseEnter={() => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -56,7 +53,7 @@ export default function Tooltip({ content, children, className = "" }: TooltipPr
           <div className="bg-gray-900 dark:bg-navy-800 text-white text-xs rounded-lg shadow-xl p-3 max-w-xs border border-gray-700 dark:border-navy-600">
             {content}
           </div>
-          <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900 dark:border-t-navy-800" />
+          <div className="absolute left-1/2 -translate-x-1/2 -top-1 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-gray-900 dark:border-b-navy-800" />
         </div>
       )}
     </div>
