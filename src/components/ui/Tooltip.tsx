@@ -12,14 +12,17 @@ export default function Tooltip({ content, children, className = "" }: TooltipPr
   const triggerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const showTooltip = (e: React.MouseEvent) => {
+  const showTooltip = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    setPosition({
-      x: e.clientX,
-      y: e.clientY,
-    });
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.bottom + 8,
+      });
+    }
     setIsVisible(true);
   };
 
@@ -42,7 +45,7 @@ export default function Tooltip({ content, children, className = "" }: TooltipPr
           className="fixed z-50 pointer-events-none"
           style={{
             left: position.x,
-            top: position.y + 16,
+            top: position.y,
             transform: "translateX(-50%)",
           }}
           onMouseEnter={() => {
