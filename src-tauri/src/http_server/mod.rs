@@ -13,6 +13,8 @@ pub type AppState = Arc<HttpAppState>;
 pub struct HttpAppState {
     pub state_manager: StateManager,
     pub save_manager: Mutex<SaveManager>,
+    /// Path to the settings.json file (set on startup).
+    pub settings_path: std::path::PathBuf,
 }
 
 pub async fn start_server(port: u16) -> Result<(), Box<dyn std::error::Error>> {
@@ -27,9 +29,15 @@ pub async fn start_server(port: u16) -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all(&saves_dir)?;
     let save_manager = SaveManager::init(&saves_dir)?;
 
+    let settings_dir = dirs::data_local_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("openfootmanager");
+    std::fs::create_dir_all(&settings_dir)?;
+
     let app_state = Arc::new(HttpAppState {
         state_manager,
         save_manager: std::sync::Mutex::new(save_manager),
+        settings_path: settings_dir.join("settings.json"),
     });
 
     let cors = CorsLayer::new()

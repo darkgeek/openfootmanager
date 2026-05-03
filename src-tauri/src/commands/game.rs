@@ -8,6 +8,7 @@ use ofm_core::clock::GameClock;
 use ofm_core::game::Game;
 use ofm_core::state::StateManager;
 
+use crate::commands::settings::AppSettings;
 use crate::SaveManagerState;
 
 /// Step 1: Create manager + generate world. No team assigned yet.
@@ -155,6 +156,20 @@ pub async fn select_team(
     game.messages.push(staff_msg);
 
     ofm_core::player_events::generate_contract_concern_messages(&mut game, false);
+
+    // Apply game difficulty settings (board_firing_enabled)
+    // Read directly from settings.json in the app data dir (no AppHandle needed)
+    let settings_dir = dirs::data_local_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("openfootmanager");
+    let settings_path = settings_dir.join("settings.json");
+    if settings_path.exists() {
+        if let Ok(json) = std::fs::read_to_string(&settings_path) {
+            if let Ok(settings) = serde_json::from_str::<AppSettings>(&json) {
+                game.board_firing_enabled = settings.board_firing_enabled;
+            }
+        }
+    }
 
     // Save to new per-save DB
     let manager_name = format!("{} {}", game.manager.first_name, game.manager.last_name);

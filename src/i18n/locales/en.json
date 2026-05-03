@@ -1053,6 +1053,8 @@
     "matchCommentaryDesc": "Show event commentary during live matches",
     "confirmAdvance": "Confirm Before Advancing",
     "confirmAdvanceDesc": "Ask for confirmation before advancing a day",
+    "boardFiring": "Board Firing",
+    "boardFiringDesc": "When enabled, the board may fire you for poor performance. Disable for a relaxed experience where you cannot be sacked.",
     "savesData": "Saves & Data",
     "autoSave": "Auto-Save",
     "autoSaveDesc": "Automatically save your game after each day",

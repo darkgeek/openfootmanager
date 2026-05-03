@@ -492,6 +492,15 @@ pub async fn select_team(
 
     player_events::generate_contract_concern_messages(&mut game, false);
 
+    // Apply game difficulty settings (board_firing_enabled)
+    if state.settings_path.exists() {
+        if let Ok(json) = std::fs::read_to_string(&state.settings_path) {
+            if let Ok(settings) = serde_json::from_str::<crate::commands::settings::AppSettings>(&json) {
+                game.board_firing_enabled = settings.board_firing_enabled;
+            }
+        }
+    }
+
     let manager_name = format!("{} {}", game.manager.first_name, game.manager.last_name);
     let save_name = format!("{}'s Career", manager_name);
 
@@ -2156,16 +2165,34 @@ pub async fn submit_press_conference(State(state): State<AppState>, Json(_params
     Ok(Json(serde_json::json!({ "game": game })))
 }
 
-pub async fn get_settings(State(_state): State<AppState>) -> Result<Json<Value>, String> {
-    // Return default settings
-    Ok(Json(serde_json::json!({
-        "language": "en",
-        "default_match_mode": "live",
-        "volume": 0.8
-    })))
+pub async fn get_settings(State(state): State<AppState>) -> Result<Json<Value>, String> {
+    use crate::commands::settings::AppSettings;
+    if !state.settings_path.exists() {
+        return Ok(Json(serde_json::to_value(&AppSettings::default()).unwrap()));
+    }
+    let json = std::fs::read_to_string(&state.settings_path).map_err(|e| e.to_string())?;
+    let settings: AppSettings = serde_json::from_str(&json).map_err(|e| format!("Failed to parse settings: {}", e))?;
+    serde_json::to_value(&settings).map(Json).map_err(|e| e.to_string())
 }
 
-pub async fn save_settings(State(_state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<()>, String> {
+pub async fn save_settings(State(state): State<AppState>, Json(params): Json<Value>) -> Result<Json<()>, String> {
+    use crate::commands::settings::AppSettings;
+    let settings: AppSettings = serde_json::from_value(params).map_err(|e| e.to_string())?;
+    let json = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
+    std::fs::write(&state.settings_path, json).map_err(|e| format!("Failed to save settings: {}", e))?;
+
+    // If a game is currently active, apply the new board_firing_enabled to it
+    // and save the updated game so the change persists.
+    if let Some(mut game) = state.state_manager.get_game(|g| g.clone()) {
+        game.board_firing_enabled = settings.board_firing_enabled;
+        state.state_manager.set_game(game.clone());
+        if let Some(save_id) = state.state_manager.get_save_id() {
+            if let Ok(mut sm) = state.save_manager.lock() {
+                let _ = sm.save_game(&game, &save_id);
+            }
+        }
+    }
+
     Ok(Json(()))
 }
 

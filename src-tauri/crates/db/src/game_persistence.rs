@@ -147,6 +147,7 @@ impl GamePersistenceReader {
             days_since_last_job_offer: None,
             youth_recommendations: vec![],
             training_snapshots: vec![],
+            board_firing_enabled: true,
         };
         ofm_core::season_context::refresh_game_context(&mut game);
 

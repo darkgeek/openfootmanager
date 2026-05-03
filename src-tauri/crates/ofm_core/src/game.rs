@@ -13,6 +13,8 @@ use crate::youth_academy::YouthRecommendation;
 
 use serde::{Deserialize, Serialize};
 
+fn default_board_firing_enabled() -> bool { true }
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ObjectiveType {
     LeaguePosition,
@@ -32,9 +34,9 @@ pub struct BoardObjective {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScoutingAssignment {
     pub id: String,
-    pub scout_id: String,
     pub player_id: String,
     pub days_remaining: u32,
+    pub scout_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,6 +62,10 @@ pub struct Game {
     pub youth_recommendations: Vec<YouthRecommendation>,
     #[serde(default)]
     pub training_snapshots: Vec<TeamTrainingSnapshot>,
+    /// When false, the board will never fire the manager regardless of satisfaction.
+    /// Set via game difficulty settings.
+    #[serde(default = "default_board_firing_enabled")]
+    pub board_firing_enabled: bool,
 }
 
 impl Game {
@@ -86,6 +92,7 @@ impl Game {
             days_since_last_job_offer: None,
             youth_recommendations: vec![],
             training_snapshots: vec![],
+            board_firing_enabled: true,
         };
         crate::football_identity::upgrade_game_football_identities(&mut game);
         crate::season_context::refresh_game_context(&mut game);

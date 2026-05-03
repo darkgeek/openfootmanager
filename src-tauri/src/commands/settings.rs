@@ -16,6 +16,8 @@ pub struct AppSettings {
     pub ui_scale: String, // "small" | "normal" | "large" | "xlarge"
     #[serde(default)]
     pub high_contrast: bool,
+    #[serde(default = "default_board_firing_enabled")]
+    pub board_firing_enabled: bool, // "safe_mode" — when false, board cannot fire the manager
 }
 
 fn default_language() -> String {
@@ -23,6 +25,10 @@ fn default_language() -> String {
 }
 fn default_ui_scale() -> String {
     "normal".to_string()
+}
+
+fn default_board_firing_enabled() -> bool {
+    true
 }
 
 impl Default for AppSettings {
@@ -38,6 +44,7 @@ impl Default for AppSettings {
             confirm_advance: false,
             ui_scale: "normal".to_string(),
             high_contrast: false,
+            board_firing_enabled: true,
         }
     }
 }
@@ -63,10 +70,20 @@ pub fn get_settings(app_handle: tauri::AppHandle) -> Result<AppSettings, String>
 }
 
 #[tauri::command]
-pub fn save_settings(app_handle: tauri::AppHandle, settings: AppSettings) -> Result<(), String> {
+pub fn save_settings(app_handle: tauri::AppHandle, wrapper: serde_json::Value) -> Result<(), String> {
+    // Frontend sends { settings: AppSettings } — accept both formats for compatibility.
+    let settings: AppSettings = if let Some(settings_obj) = wrapper.get("settings") {
+        serde_json::from_value(settings_obj.clone())
+            .map_err(|e| format!("Failed to parse settings object: {}", e))?
+    } else {
+        // Frontend sends { settings: AppSettings } — try direct parse too
+        serde_json::from_value(wrapper.clone())
+            .map_err(|e| format!("Failed to parse settings: {}", e))?
+    };
+
     info!(
-        "[cmd] save_settings: theme={}, lang={}",
-        settings.theme, settings.language
+        "[cmd] save_settings: theme={}, lang={}, board_firing_enabled={}",
+        settings.theme, settings.language, settings.board_firing_enabled
     );
     let path = settings_path(&app_handle)?;
     let json = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;

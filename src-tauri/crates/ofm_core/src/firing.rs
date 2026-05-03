@@ -30,6 +30,12 @@ pub fn check_manager_firing(game: &mut Game) -> bool {
         return false;
     }
 
+    // Game difficulty setting: when board_firing_enabled is false,
+    // the board will never fire the manager regardless of satisfaction.
+    if !game.board_firing_enabled {
+        return false;
+    }
+
     let satisfaction = game.manager.satisfaction;
     let stage = game.manager.warning_stage;
 
@@ -342,6 +348,31 @@ mod tests {
     fn no_action_when_manager_has_no_team() {
         let mut game = make_game(5);
         game.manager.team_id = None;
+        let fired = check_manager_firing(&mut game);
+        assert!(!fired);
+        assert!(game.messages.is_empty());
+    }
+
+    #[test]
+    fn no_firing_when_board_firing_disabled() {
+        // When board_firing_enabled is false, the manager should never be fired
+        // regardless of satisfaction level or warning stage.
+        let mut game = make_game(5);
+        game.manager.warning_stage = STAGE_WARNING; // would normally trigger firing
+        game.board_firing_enabled = false;
+
+        let fired = check_manager_firing(&mut game);
+        assert!(!fired);
+        assert!(game.manager.team_id.is_some()); // not fired
+        assert!(game.messages.is_empty()); // no warning or firing message
+    }
+
+    #[test]
+    fn no_warning_when_board_firing_disabled() {
+        // Warnings are also skipped when board_firing_enabled is false.
+        let mut game = make_game(25);
+        game.board_firing_enabled = false;
+
         let fired = check_manager_firing(&mut game);
         assert!(!fired);
         assert!(game.messages.is_empty());
