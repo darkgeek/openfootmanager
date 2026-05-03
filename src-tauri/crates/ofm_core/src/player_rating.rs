@@ -103,6 +103,7 @@ fn midfield_line(count: usize) -> Vec<Position> {
 
 fn deep_midfield_line(count: usize) -> Vec<Position> {
     match count {
+        0 => vec![],
         1 => vec![Position::DefensiveMidfielder],
         2 => vec![Position::DefensiveMidfielder, Position::CentralMidfielder],
         _ => vec![Position::DefensiveMidfielder; count],
@@ -111,8 +112,9 @@ fn deep_midfield_line(count: usize) -> Vec<Position> {
 
 fn attacking_midfield_line(count: usize) -> Vec<Position> {
     match count {
+        0 => vec![],
         1 => vec![Position::AttackingMidfielder],
-        2 => vec![Position::AttackingMidfielder, Position::AttackingMidfielder],
+        2 => vec![Position::LeftMidfielder, Position::RightMidfielder],
         3 => vec![
             Position::LeftMidfielder,
             Position::AttackingMidfielder,
@@ -407,6 +409,51 @@ mod tests {
                 Position::Striker,
             ]
         );
+    }
+
+    #[test]
+    fn formation_slots_4_1_4_1_has_correct_count_per_position() {
+        // 4-1-4-1: 4 def, 1 DM, 4 AM (combined midfielder), 1 striker
+        // Groups: [1 GK, 4 defenders, 1+4=5 midfielders, 1 forward]
+        let slots = formation_slots("4-1-4-1");
+        assert_eq!(slots.len(), 11);
+        let group_counts = count_by_group(&slots);
+        assert_eq!(group_counts.defenders, 4, "4-1-4-1 must have exactly 4 defenders");
+        assert_eq!(group_counts.midfielders, 5, "4-1-4-1 must have exactly 5 midfielders (1+4)");
+        assert_eq!(group_counts.forwards, 1, "4-1-4-1 must have exactly 1 forward");
+        assert_eq!(group_counts.goalkeepers, 1, "4-1-4-1 must have exactly 1 goalkeeper");
+    }
+
+    #[test]
+    fn formation_slots_4_2_3_1_splits_midfield_into_deep_and_attacking() {
+        // 4-2-3-1: 4 def, 2 deep midfield (DM+CM), 3 attacking (LM+AM+RM), 1 striker
+        let slots = formation_slots("4-2-3-1");
+        assert_eq!(slots.len(), 11);
+        let group_counts = count_by_group(&slots);
+        assert_eq!(group_counts.defenders, 4);
+        assert_eq!(group_counts.midfielders, 5); // 2+3=5
+        assert_eq!(group_counts.forwards, 1);
+    }
+
+    struct GroupCounts {
+        goalkeepers: usize,
+        defenders: usize,
+        midfielders: usize,
+        forwards: usize,
+    }
+
+    fn count_by_group(slots: &[Position]) -> GroupCounts {
+        let mut counts = GroupCounts { goalkeepers: 0, defenders: 0, midfielders: 0, forwards: 0 };
+        for slot in slots {
+            match slot.to_group_position() {
+                domain::player::Position::Goalkeeper => counts.goalkeepers += 1,
+                domain::player::Position::Defender => counts.defenders += 1,
+                domain::player::Position::Midfielder => counts.midfielders += 1,
+                domain::player::Position::Forward => counts.forwards += 1,
+                _ => {}
+            }
+        }
+        counts
     }
 
     #[test]

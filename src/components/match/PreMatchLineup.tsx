@@ -147,6 +147,13 @@ export default function PreMatchLineup({
   const { t } = useTranslation();
   const positions = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
 
+  // DEBUG: log position counts
+  const posCounts = {} as Record<string, number>;
+  for (const p of userTeam.players) {
+    posCounts[p.position] = (posCounts[p.position] || 0) + 1;
+  }
+  console.log("[PreMatchLineup] formation:", userTeam.formation, "| player counts:", posCounts);
+
   return (
     <div className="flex flex-col gap-4">
       {/* Formation Balance Bar + Auto-Select */}

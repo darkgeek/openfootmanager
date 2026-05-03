@@ -29,7 +29,7 @@ pub fn set_formation(state: State<'_, StateManager>, formation: String) -> Resul
     };
 
     if let Some(team) = game.teams.iter_mut().find(|t| t.id == team_id) {
-        team.formation = formation;
+        team.formation = formation.clone();
     }
 
     // Reassign positions for outfield players on this team
@@ -72,7 +72,15 @@ pub fn set_formation(state: State<'_, StateManager>, formation: String) -> Resul
             player.position = new_pos;
         }
     }
-
+    
+    // Debug: log positions after reassignment
+    let team_id = game.manager.team_id.clone().unwrap();
+    let mut pos_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for p in game.players.iter().filter(|p| p.team_id.as_deref() == Some(&team_id)) {
+        *pos_counts.entry(format!("{:?}", p.position)).or_insert(0) += 1;
+    }
+    info!("[cmd] set_formation: {} -> position counts: {:?}", formation, pos_counts);
+    
     state.set_game(game.clone());
     Ok(game)
 }

@@ -323,30 +323,92 @@ pub fn ai_end_of_season_replenishment(game: &mut Game) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::turn::tests::make_test_game;
-    
+    use crate::game::Game;
+    use crate::clock::GameClock;
+    use domain::manager::Manager;
+    use domain::player::Player;
+    use domain::player::PlayerAttributes;
+    use domain::team::Team;
+    use chrono::TimeZone;
+
+    fn make_test_game_with_team(team_id: &str) -> Game {
+        let clock = GameClock::new(chrono::Utc.with_ymd_and_hms(2025, 6, 15, 12, 0, 0).unwrap());
+        let mut manager = Manager::new(
+            "mgr1".to_string(),
+            "Test".to_string(),
+            "Manager".to_string(),
+            "1980-01-01".to_string(),
+            "England".to_string(),
+        );
+        manager.hire(team_id.to_string());
+
+        let team = Team::new(
+            team_id.to_string(),
+            "Test FC".to_string(),
+            "TST".to_string(),
+            "England".to_string(),
+            "London".to_string(),
+            "Test Ground".to_string(),
+            30_000,
+        );
+
+        let attrs = PlayerAttributes {
+            pace: 50,
+            stamina: 50,
+            strength: 50,
+            agility: 50,
+            passing: 50,
+            shooting: 50,
+            tackling: 50,
+            dribbling: 50,
+            defending: 50,
+            positioning: 50,
+            vision: 50,
+            decisions: 50,
+            composure: 50,
+            aggression: 50,
+            teamwork: 50,
+            leadership: 50,
+            handling: 75,
+            reflexes: 75,
+            aerial: 50,
+        };
+        let gk = Player::new(
+            format!("{}_gk", team_id),
+            "Test".to_string(),
+            "GK".to_string(),
+            "2000-01-01".to_string(),
+            "England".to_string(),
+            Position::Goalkeeper,
+            attrs,
+        );
+
+        Game::new(clock, manager, vec![team], vec![gk], vec![], vec![])
+    }
+
     #[test]
     fn test_minimum_squad_requirements() {
-        let mut game = make_test_game();
-        
         let team_id = "test_ai_team";
-        game.teams.push(domain::team::Team::new(
+        let mut game = make_test_game_with_team(team_id);
+
+        game.teams.push(Team::new(
             team_id.to_string(),
             "Test AI FC".to_string(),
             "TAI".to_string(),
             "England".to_string(),
             "London".to_string(),
             "Test Ground".to_string(),
+            30_000,
         ));
-        
+
         let (gks, outfield) = count_squad_size(&game, team_id);
         assert_eq!(gks, 0);
         assert_eq!(outfield, 0);
-        
+
         sign_youth_player(&mut game, team_id, Position::Goalkeeper);
         let (gks, _) = count_squad_size(&game, team_id);
         assert_eq!(gks, 1);
-        
+
         sign_youth_player(&mut game, team_id, Position::Midfielder);
         let (_, outfield) = count_squad_size(&game, team_id);
         assert_eq!(outfield, 1);

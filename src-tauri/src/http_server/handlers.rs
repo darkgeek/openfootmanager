@@ -19,7 +19,8 @@ use ofm_core::messages;
 use ofm_core::news;
 use ofm_core::player_events;
 use ofm_core::schedule;
-use ofm_core::end_of_season::randomize_ai_training_focuses;
+use ofm_core::end_of_season::{randomize_ai_training_focuses, is_season_complete, process_end_of_season};
+use ofm_core::firing::check_manager_firing;
 use ofm_core::live_match_manager::{self, MatchMode};
 use ofm_core::contracts::{
     propose_renewal as propose_renewal_service,
@@ -522,7 +523,11 @@ pub async fn load_game(
     }
     ofm_core::youth_academy::cleanup_expired_recommendations(&mut game);
     
-    info!("[load_game] Game loaded, snapshots: {}, messages: {}", 
+    // Recalculate positions for all teams based on their formations.
+    // This fixes positions for saved games created before the formation fix.
+    recalculate_all_positions(&mut game);
+    
+    info!("[load_game] Game loaded, snapshots: {}, messages: {}",
           game.training_snapshots.len(), game.messages.len());
 
     let mgr_name = format!("{} {}", game.manager.first_name, game.manager.last_name);
@@ -949,12 +954,170 @@ pub async fn set_formation(State(state): State<AppState>, Json(params): Json<Val
         .get_game(|g| g.clone())
         .ok_or("No active game session".to_string())?;
     
-    // Update manager's team formation
+    // Parse formation into (def, mid, fwd) counts
+    let parts: Vec<usize> = formation
+        .split('-')
+        .filter_map(|s| s.parse().ok())
+        .collect();
+    let (num_def, num_mid, num_fwd) = match parts.len() {
+        3 => (parts[0], parts[1], parts[2]),
+        4 => (parts[0], parts[1] + parts[2], parts[3]),
+        _ => (4, 4, 2),
+    };
+    
+    info!("[http] set_formation: {} -> def={}, mid={}, fwd={}", formation, num_def, num_mid, num_fwd);
+    
+    // Update manager's team formation and reassign player positions
     if let Some(ref team_id) = game.manager.team_id {
         if let Some(team) = game.teams.iter_mut().find(|t| t.id == *team_id) {
-            team.formation = formation;
+            team.formation = formation.clone();
         }
+        
+        // Reassign positions for outfield players
+        let player_ids: Vec<String> = game
+            .players
+            .iter()
+            .filter(|p| {
+                p.team_id.as_deref() == Some(team_id)
+                    && p.position != domain::player::Position::Goalkeeper
+            })
+            .map(|p| p.id.clone())
+            .collect();
+        
+        // Sort by defensive ability (most defensive first)
+        let mut sorted_ids = player_ids.clone();
+        sorted_ids.sort_by(|a_id, b_id| {
+            let pa = game.players.iter().find(|p| p.id == *a_id).unwrap();
+            let pb = game.players.iter().find(|p| p.id == *b_id).unwrap();
+            let def_a = pa.attributes.defending as u16
+                + pa.attributes.tackling as u16
+                + pa.attributes.strength as u16;
+            let def_b = pb.attributes.defending as u16
+                + pb.attributes.tackling as u16
+                + pb.attributes.strength as u16;
+            def_b.cmp(&def_a)
+        });
+        
+        // Count positions before
+        let mut before_counts = std::collections::HashMap::new();
+        for p in game.players.iter().filter(|p| p.team_id.as_deref() == Some(team_id)) {
+            *before_counts.entry(format!("{:?}", p.position)).or_insert(0) += 1;
+        }
+        info!("[http] set_formation: before positions: {:?}", before_counts);
+        
+        // Assign positions
+        for (slot, pid) in sorted_ids.iter().enumerate() {
+            let new_pos = if slot < num_def {
+                domain::player::Position::Defender
+            } else if slot < num_def + num_mid {
+                domain::player::Position::Midfielder
+            } else if slot < num_def + num_mid + num_fwd {
+                domain::player::Position::Forward
+            } else {
+                continue;
+            };
+            if let Some(player) = game.players.iter_mut().find(|p| p.id == *pid) {
+                info!("[http] set_formation: player {} {} -> {:?}", player.match_name, format!("{:?}", player.position), new_pos);
+                player.position = new_pos;
+            }
+        }
+        
+        // Count positions after
+        let mut after_counts = std::collections::HashMap::new();
+        for p in game.players.iter().filter(|p| p.team_id.as_deref() == Some(team_id)) {
+            *after_counts.entry(format!("{:?}", p.position)).or_insert(0) += 1;
+        }
+        info!("[http] set_formation: after positions: {:?}", after_counts);
     }
+    
+    state.state_manager.set_game(game.clone());
+    Ok(Json(game))
+}
+
+/// Recalculate positions for ALL teams in the game based on their formations.
+/// This fixes positions for saved games that were created before the formation fix was applied.
+/// Call this after loading a game from the database.
+pub fn recalculate_all_positions(game: &mut Game) {
+    for team in game.teams.iter_mut() {
+        let formation = &team.formation;
+        let parts: Vec<usize> = formation
+            .split('-')
+            .filter_map(|s| s.parse().ok())
+            .collect();
+        let (num_def, num_mid, num_fwd) = match parts.len() {
+            3 => (parts[0], parts[1], parts[2]),
+            4 => (parts[0], parts[1] + parts[2], parts[3]),
+            _ => continue,
+        };
+        
+        // Get outfield players for this team
+        let mut player_ids: Vec<String> = game
+            .players
+            .iter()
+            .filter(|p| {
+                p.team_id.as_deref() == Some(&team.id)
+                    && p.position != domain::player::Position::Goalkeeper
+            })
+            .map(|p| p.id.clone())
+            .collect();
+        
+        // Sort by defensive ability (most defensive first)
+        player_ids.sort_by(|a_id, b_id| {
+            let pa = game.players.iter().find(|p| p.id == *a_id).unwrap();
+            let pb = game.players.iter().find(|p| p.id == *b_id).unwrap();
+            let def_a = pa.attributes.defending as u16 + pa.attributes.tackling as u16 + pa.attributes.strength as u16;
+            let def_b = pb.attributes.defending as u16 + pb.attributes.tackling as u16 + pb.attributes.strength as u16;
+            def_b.cmp(&def_a)
+        });
+        
+        // Assign positions
+        for (slot, pid) in player_ids.iter().enumerate() {
+            let new_pos = if slot < num_def {
+                domain::player::Position::Defender
+            } else if slot < num_def + num_mid {
+                domain::player::Position::Midfielder
+            } else if slot < num_def + num_mid + num_fwd {
+                domain::player::Position::Forward
+            } else {
+                continue;
+            };
+            if let Some(player) = game.players.iter_mut().find(|p| p.id == *pid) {
+                player.position = new_pos;
+            }
+        }
+        
+        // Log position counts
+        let mut pos_counts = std::collections::HashMap::new();
+        for p in game.players.iter().filter(|p| p.team_id.as_deref() == Some(&team.id)) {
+            *pos_counts.entry(format!("{:?}", p.position)).or_insert(0) += 1;
+        }
+        info!("[recalculate_all_positions] {} ({}) -> {:?}", team.name, formation, pos_counts);
+    }
+}
+
+/// Recalculate positions for all teams based on their formations
+/// This fixes positions for saved games that were created before the formation fix
+pub async fn recalculate_positions(State(state): State<AppState>) -> Result<Json<Game>, String> {
+    let mut game = state.state_manager
+        .get_game(|g| g.clone())
+        .ok_or("No active game session".to_string())?;
+    
+    info!("[http] recalculate_positions: recalculating for {} teams", game.teams.len());
+    recalculate_all_positions(&mut game);
+    
+    // Save to database so changes persist
+    let save_id = state.state_manager
+        .get_save_id()
+        .ok_or("No active save session".to_string())?;
+    {
+        let mut sm = state.save_manager.lock().map_err(|e: std::sync::PoisonError<_>| e.to_string())?;
+        sm.save_game(&game, &save_id)?;
+        let stats_state = state.state_manager
+            .get_stats_state(|stats| stats.clone())
+            .unwrap_or_default();
+        sm.save_stats_state(&stats_state, &save_id)?;
+    }
+    info!("[http] recalculate_positions: saved to database");
     
     state.state_manager.set_game(game.clone());
     Ok(Json(game))
@@ -1410,11 +1573,28 @@ pub async fn check_season_complete(State(state): State<AppState>) -> Result<Json
     Ok(Json(complete))
 }
 
-pub async fn advance_to_next_season(State(state): State<AppState>) -> Result<Json<Game>, String> {
-    state.state_manager
+pub async fn advance_to_next_season(State(state): State<AppState>) -> Result<Json<Value>, String> {
+    let mut game = state.state_manager
         .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())
-        .map(Json)
+        .ok_or("No active game session".to_string())?;
+
+    if !is_season_complete(&game) {
+        return Err("Season is not yet complete".to_string());
+    }
+
+    let summary = process_end_of_season(&mut game);
+
+    // End-of-season objective evaluation may have dropped satisfaction — check firing
+    check_manager_firing(&mut game);
+
+    state.state_manager.set_game(game.clone());
+
+    let response = serde_json::json!({
+        "game": game,
+        "summary": summary,
+    });
+
+    Ok(Json(response))
 }
 
 pub async fn get_season_awards(State(state): State<AppState>) -> Result<Json<Value>, String> {

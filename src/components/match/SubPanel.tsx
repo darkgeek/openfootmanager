@@ -44,8 +44,17 @@ export function SubPanel({
 
   const positions = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
 
+
+  // DEBUG: log formation to help debug 4前锋 issue
+  console.log("[SubPanel] formation:", team.formation, "| parts:", team.formation.split("-").map(Number));
   // Parse formation to get expected counts per position
   const parts = team.formation.split("-").map(Number);
+  // DEBUG: count players by position
+  const posCounts = {} as Record<string, number>;
+  for (const p of team.players) {
+    posCounts[p.position] = (posCounts[p.position] || 0) + 1;
+  }
+  console.log("[SubPanel] player position counts:", posCounts, "| sent_off:", snapshot.sent_off);
   const expectedCounts: Record<string, number> = {
     Goalkeeper: 1,
     Defender: 0,

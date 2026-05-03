@@ -62,6 +62,7 @@ pub async fn start_server(port: u16) -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/get_league", get(get_league).post(get_league))
         .route("/api/upgrade_facility", post(upgrade_facility))
         .route("/api/set_formation", post(set_formation))
+        .route("/api/recalculate_positions", post(recalculate_positions))
         .route("/api/set_starting_xi", post(set_starting_xi))
         .route("/api/set_play_style", post(set_play_style))
         .route("/api/set_team_match_roles", post(set_team_match_roles))

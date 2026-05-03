@@ -390,6 +390,9 @@ export default function MainMenu() {
     setLoadingSaveId(saveId);
     try {
       const managerName = await invoke<string>("load_game", { saveId });
+      // Fetch the game state with recalculated positions
+      const game = await invoke<GameStateData>("get_active_game");
+      setGameState(game);
       setGameActive(true, managerName);
       navigate("/dashboard");
     } catch (error) {

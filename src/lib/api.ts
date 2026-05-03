@@ -22,6 +22,7 @@ export async function invoke<T = unknown>(
   args?: Record<string, unknown>
 ): Promise<T> {
   const url = `${API_BASE}/api/${cmd}`;
+  console.log(`[API] invoke: ${cmd}`, args);
   
   const response = await fetch(url, {
     method: 'POST',

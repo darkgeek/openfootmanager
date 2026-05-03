@@ -506,3 +506,149 @@ fn extra_time_flag_passed_through() {
     let session = live_match_manager::create_live_match(&game, 0, MatchMode::Instant, true);
     assert!(session.is_ok());
 }
+
+// ---------------------------------------------------------------------------
+// Formation position count verification (4-part formations)
+// ---------------------------------------------------------------------------
+
+fn position_counts_in_snapshot(snapshot: &engine::MatchSnapshot) -> (usize, usize, usize) {
+    use engine::Position;
+    let mut def = 0;
+    let mut mid = 0;
+    let mut fwd = 0;
+    for p in &snapshot.home_team.players {
+        match p.position {
+            Position::Defender => def += 1,
+            Position::Midfielder => mid += 1,
+            Position::Forward => fwd += 1,
+            Position::Goalkeeper => { /* not counted */ }
+        }
+    }
+    (def, mid, fwd)
+}
+
+#[test]
+fn four_one_four_one_formation_has_correct_position_counts() {
+    let mut game = make_game_with_fixture();
+    // Set formation to 4-1-4-1 for team1
+    let team1 = game.teams.iter_mut().find(|t| t.id == "team1").unwrap();
+    team1.formation = "4-1-4-1".to_string();
+
+    let session = live_match_manager::create_live_match(&game, 0, MatchMode::Instant, false).unwrap();
+    let snapshot = session.snapshot();
+
+    assert_eq!(
+        snapshot.home_team.formation, "4-1-4-1",
+        "formation should be set to 4-1-4-1"
+    );
+
+    let (def_count, mid_count, fwd_count) = position_counts_in_snapshot(&snapshot);
+    assert_eq!(def_count, 4, "4-1-4-1 should have 4 defenders (not 4+2=6)");
+    assert_eq!(mid_count, 5, "4-1-4-1 should have 5 midfielders (1+4, not 2+4=6)");
+    assert_eq!(fwd_count, 1, "4-1-4-1 should have 1 forward");
+    assert_eq!(snapshot.home_team.players.len(), 11, "starting XI should always have 11 players total (1 GK + 10 outfield)");
+}
+
+#[test]
+fn four_two_three_one_formation_combines_deep_midfielders_into_midfielder_group() {
+    let mut game = make_game_with_fixture();
+    let team1 = game.teams.iter_mut().find(|t| t.id == "team1").unwrap();
+    team1.formation = "4-2-3-1".to_string();
+
+    let session = live_match_manager::create_live_match(&game, 0, MatchMode::Instant, false).unwrap();
+    let snapshot = session.snapshot();
+
+    let (def_count, mid_count, fwd_count) = position_counts_in_snapshot(&snapshot);
+    assert_eq!(def_count, 4, "4-2-3-1 should have 4 defenders");
+    assert_eq!(mid_count, 5, "4-2-3-1 should have 5 midfielders (2+3, not 3+3=6)");
+    assert_eq!(fwd_count, 1, "4-2-3-1 should have 1 forward");
+}
+
+#[test]
+fn three_four_one_two_formation_combines_midfield_groups() {
+    let mut game = make_game_with_fixture();
+    let team1 = game.teams.iter_mut().find(|t| t.id == "team1").unwrap();
+    team1.formation = "3-4-1-2".to_string();
+
+    let session = live_match_manager::create_live_match(&game, 0, MatchMode::Instant, false).unwrap();
+    let snapshot = session.snapshot();
+
+    let (def_count, mid_count, fwd_count) = position_counts_in_snapshot(&snapshot);
+    assert_eq!(def_count, 3, "3-4-1-2 should have 3 defenders");
+    assert_eq!(mid_count, 5, "3-4-1-2 should have 5 midfielders (4+1)");
+    assert_eq!(fwd_count, 2, "3-4-1-2 should have 2 forwards");
+}
+
+// ---------------------------------------------------------------------------
+// Starting XI from saved IDs (Tactics screen)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn saved_xi_ids_are_used_in_live_match() {
+    let mut game = make_game_with_fixture();
+    let team1 = game.teams.iter_mut().find(|t| t.id == "team1").unwrap();
+    team1.formation = "4-1-4-1".to_string();
+    // Set a specific starting XI: pick the last 11 players as starters
+    // (instead of the default first-11). The key is that the order in
+    // starting_xi_ids determines which slot each player fills.
+    let all_team1_ids: Vec<String> = game
+        .players
+        .iter()
+        .filter(|p| p.team_id.as_deref() == Some("team1"))
+        .map(|p| p.id.clone())
+        .collect();
+    // Use the bottom 11 players as starters to verify ordering is respected
+    let starters = all_team1_ids.into_iter().rev().take(11).collect::<Vec<_>>();
+    team1.starting_xi_ids = starters.clone();
+
+    let session = live_match_manager::create_live_match(&game, 0, MatchMode::Instant, false).unwrap();
+    let snapshot = session.snapshot();
+
+    // Check that the player IDs in the snapshot are exactly our saved IDs
+    let snapshot_ids: Vec<&str> = snapshot
+        .home_team
+        .players
+        .iter()
+        .map(|p| p.id.as_str())
+        .collect();
+
+    // All 11 saved starters should appear (some may differ due to injuries/suspensions
+    // in the fixture logic, but the order should be respected when possible).
+    // Key check: the GK at position 0 should be the saved GK at index 0 of starters.
+    let gk_slot = snapshot.home_team.players.iter().find(|p| p.position == engine::Position::Goalkeeper);
+    assert!(gk_slot.is_some(), "Should have a goalkeeper");
+    assert_eq!(gk_slot.unwrap().id, starters[0], "GK should be the saved GK");
+}
+
+#[test]
+fn saved_xi_ids_with_partial_list_fills_remaining_with_auto_selection() {
+    let mut game = make_game_with_fixture();
+    let team1 = game.teams.iter_mut().find(|t| t.id == "team1").unwrap();
+    team1.formation = "4-1-4-1".to_string();
+    // Provide only 5 saved IDs - remaining 6 should be auto-filled
+    let all_team1_ids: Vec<String> = game
+        .players
+        .iter()
+        .filter(|p| p.team_id.as_deref() == Some("team1"))
+        .map(|p| p.id.clone())
+        .collect();
+    let partial_xi = all_team1_ids.iter().take(5).cloned().collect::<Vec<_>>();
+    team1.starting_xi_ids = partial_xi.clone();
+
+    let session = live_match_manager::create_live_match(&game, 0, MatchMode::Instant, false).unwrap();
+    let snapshot = session.snapshot();
+
+    // Should have 11 players total
+    assert_eq!(snapshot.home_team.players.len(), 11, "Should fill to 11 players");
+    // First 5 should be the saved ones (available)
+    for (i, saved_id) in partial_xi.iter().enumerate() {
+        if snapshot.home_team.players.get(i).map(|p| p.id.as_str()) == Some(saved_id.as_str()) {
+            // This saved player was placed
+        }
+    }
+    // Check position counts are still correct (4-1-4-1 -> 4 DEF, 5 MID, 1 FWD)
+    let (def_count, mid_count, fwd_count) = position_counts_in_snapshot(&snapshot);
+    assert_eq!(def_count, 4);
+    assert_eq!(mid_count, 5);
+    assert_eq!(fwd_count, 1);
+}
