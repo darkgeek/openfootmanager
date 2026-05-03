@@ -3,7 +3,16 @@
 
 use std::env;
 
+fn init_logger() {
+    // Initialize env_logger for info-level logging in release builds
+    // Can be overridden with RUST_LOG env var (e.g. RUST_LOG=debug,info,openfootmanager=debug)
+    let rust_log = env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string());
+    env::set_var("RUST_LOG", &rust_log);
+    env_logger::init();
+}
+
 fn main() {
+    init_logger();
     // Check if running in web mode
     let args: Vec<String> = env::args().collect();
     

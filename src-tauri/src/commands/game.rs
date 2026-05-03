@@ -248,6 +248,13 @@ pub async fn load_game(
         }
     }
 
+    // Bootstrap transfer market if it's nearly empty — this creates initial
+    // market supply so the user can browse players immediately after loading.
+    if let Some(mut g) = state.get_game(|g| g.clone()) {
+        ofm_core::ai_team_management::initialize_transfer_market(&mut g);
+        state.set_game(g);
+    }
+
     Ok(mgr_name)
 }
 

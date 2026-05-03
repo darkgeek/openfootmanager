@@ -9,7 +9,7 @@
 use crate::game::Game;
 use domain::player::{Player, PlayerAttributes, Position};
 use domain::season::TransferWindowStatus;
-use log::info;
+use log::{info, warn};
 use rand::seq::SliceRandom;
 use rand::RngExt;
 
@@ -171,6 +171,7 @@ pub fn ai_replenish_squad_offseason(game: &mut Game) {
 
 /// Handle AI team transfers during transfer window
 pub fn ai_transfer_activity(game: &mut Game) {
+    log::info!("[ai_transfer_activity] called: transfer_window_open={}", transfer_window_is_open(game));
     if !transfer_window_is_open(game) {
         return;
     }
@@ -241,6 +242,7 @@ pub fn ai_transfer_activity(game: &mut Game) {
     // from going empty after AI teams buy all listed players.
     let market_count = game.players.iter().filter(|p| p.transfer_listed).count();
     if market_count < 10 {
+        warn!("[ai_transfer_activity] market under-stocked ({}), replenishing...", market_count);
         // Collect team IDs separately for the market replenishment loop
         let replenish_team_ids: Vec<String> = game.teams.iter()
             .filter(|t| t.id != user_team_id)
@@ -266,9 +268,16 @@ pub fn ai_transfer_activity(game: &mut Game) {
             for pid in candidates.iter().take(list_count) {
                 if let Some(p) = game.players.iter_mut().find(|pl| pl.id == *pid) {
                     p.transfer_listed = true;
+                    info!("[ai_transfer_activity] listed {} ({:?})", p.full_name, p.position);
                 }
             }
+            if list_count > 0 {
+                let team_name = game.teams.iter().find(|t| t.id == *team_id).map(|t| t.name.as_str()).unwrap_or("?");
+                info!("[ai_transfer_activity] {} listed {} players", team_name, list_count);
+            }
         }
+    } else {
+        info!("[ai_transfer_activity] market sufficiently stocked ({}), skipping daily listing", market_count);
     }
 }
 
@@ -374,7 +383,43 @@ pub fn ai_end_of_season_replenishment(game: &mut Game) {
     }
 }
 
-#[cfg(test)]
+/// Bootstrap the transfer market at game start or load.
+/// If the market has too few listed players, list squad players from AI teams.
+/// This runs once to create initial market supply for the user to browse.
+pub fn initialize_transfer_market(game: &mut Game) {
+    let market_count = game.players.iter().filter(|p| p.transfer_listed).count();
+    if market_count < 5 {
+        info!("[ai_transfer_activity] bootstrap: market has only {} listed players, seeding...", market_count);
+        let user_team_id = game.manager.team_id.clone().unwrap_or_default();
+        for team in game.teams.iter() {
+            if team.id == user_team_id {
+                continue;
+            }
+            // List up to 5 non-GK squad players for each AI team
+            let candidates: Vec<String> = game.players.iter()
+                .filter(|p| {
+                    p.team_id.as_deref() == Some(&team.id)
+                        && p.position != Position::Goalkeeper
+                        && !p.transfer_listed
+                        && !p.loan_listed
+                })
+                .map(|p| p.id.clone())
+                .collect();
+            let list_count = 5.min(candidates.len());
+            for pid in candidates.iter().take(list_count) {
+                if let Some(p) = game.players.iter_mut().find(|pl| pl.id == *pid) {
+                    p.transfer_listed = true;
+                    info!("[ai_transfer_activity] bootstrap: listed {} ({:?})", p.full_name, p.position);
+                }
+            }
+            if list_count > 0 {
+                info!("[ai_transfer_activity] bootstrap: {} listed {} players", team.name, list_count);
+            }
+        }
+    } else {
+        info!("[ai_transfer_activity] bootstrap: market already has {} listed players, skipping", market_count);
+    }
+}
 mod tests {
     use super::*;
     use crate::game::Game;

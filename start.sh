@@ -27,7 +27,7 @@ sleep 2
 # Start Backend
 echo -e "${YELLOW}Starting Backend (port 3001)...${NC}"
 cd "$SCRIPT_DIR/src-tauri"
-./target/release/openfootmanager --web &
+./target/release/openfootmanager --web > /tmp/ofm_backend.log 2>&1 &
 BACKEND_PID=$!
 sleep 3
 
