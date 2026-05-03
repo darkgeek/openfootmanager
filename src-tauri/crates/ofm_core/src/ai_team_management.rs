@@ -317,6 +317,25 @@ pub fn ai_end_of_season_replenishment(game: &mut Game) {
         if total_needed > 0 {
             info!("[AI Team] {} signed {} youth players for new season", team_name, total_needed);
         }
+        
+        // List some squad players for transfer to generate market activity.
+        // This creates supply for the AI teams to buy and for the user to browse.
+        let squad_ids: Vec<String> = game.players.iter()
+            .filter(|p| p.team_id.as_deref() == Some(&team_id) && p.position != Position::Goalkeeper)
+            .map(|p| p.id.clone())
+            .collect();
+        if squad_ids.len() > 5 {
+            // List up to 20% of the non-GK squad
+            let list_count = (squad_ids.len() as f32 * 0.2).ceil() as usize;
+            for player_id in squad_ids.iter().take(list_count) {
+                if let Some(player) = game.players.iter_mut().find(|p| &p.id == player_id) {
+                    if !player.transfer_listed && !player.loan_listed {
+                        player.transfer_listed = true;
+                        info!("[AI Team] {} listed {} on transfer market", team_name, player.full_name);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -412,5 +431,64 @@ mod tests {
         sign_youth_player(&mut game, team_id, Position::Midfielder);
         let (_, outfield) = count_squad_size(&game, team_id);
         assert_eq!(outfield, 1);
+    }
+
+    #[test]
+    fn ai_end_of_season_lists_players_for_transfer() {
+        let user_team_id = "user_team";
+        let ai_team_id = "ai_team";
+        let mut game = make_test_game_with_team(user_team_id);
+
+        // Add a second AI team to process (ai_end_of_season_replenishment skips user team)
+        game.teams.push(Team::new(
+            ai_team_id.to_string(),
+            "AI FC".to_string(),
+            "AI".to_string(),
+            "England".to_string(),
+            "London".to_string(),
+            "AI Ground".to_string(),
+            30_000,
+        ));
+
+        // Add 10 outfield players to the AI team (enough to trigger listing)
+        let attrs = PlayerAttributes {
+            pace: 50, stamina: 50, strength: 50, agility: 50,
+            passing: 50, shooting: 50, tackling: 50, dribbling: 50,
+            defending: 50, positioning: 50, vision: 50, decisions: 50,
+            composure: 50, aggression: 50, teamwork: 50, leadership: 30,
+            handling: 30, reflexes: 30, aerial: 50,
+        };
+        for i in 0..10 {
+            let mut p = Player::new(
+                format!("ai_player_{}", i),
+                format!("AIPlayer{}", i),
+                "Surname".to_string(),
+                "2000-01-01".to_string(),
+                "England".to_string(),
+                Position::Midfielder,
+                attrs.clone(),
+            );
+            p.team_id = Some(ai_team_id.to_string());
+            game.players.push(p);
+        }
+
+        // Before replenishment: no listed players
+        let listed_before = game.players.iter().filter(|p| p.transfer_listed).count();
+        assert_eq!(listed_before, 0);
+
+        ai_end_of_season_replenishment(&mut game);
+
+        // After replenishment: some players should be listed
+        let listed_after = game.players.iter().filter(|p| p.transfer_listed).count();
+        assert!(listed_after > 0, "Expected some players to be listed, but none were");
+
+        // Listed players should belong to AI teams, not the user team
+        for player in game.players.iter().filter(|p| p.transfer_listed) {
+            assert_ne!(
+                player.team_id.as_ref(),
+                Some(&user_team_id.to_string()),
+                "User's own players should not be listed by AI"
+            );
+        }
     }
 }
