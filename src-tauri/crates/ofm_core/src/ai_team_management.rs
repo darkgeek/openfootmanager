@@ -235,6 +235,41 @@ pub fn ai_transfer_activity(game: &mut Game) {
             }
         }
     }
+    
+    // Replenish the transfer market: AI teams list squad players to keep the
+    // market stocked throughout the transfer window. This prevents the market
+    // from going empty after AI teams buy all listed players.
+    let market_count = game.players.iter().filter(|p| p.transfer_listed).count();
+    if market_count < 10 {
+        // Collect team IDs separately for the market replenishment loop
+        let replenish_team_ids: Vec<String> = game.teams.iter()
+            .filter(|t| t.id != user_team_id)
+            .map(|t| t.id.clone())
+            .collect();
+        for team_id in &replenish_team_ids {
+            // Skip teams that are already well-stocked
+            let (gks, outfield) = count_squad_size(game, team_id);
+            if gks >= MIN_GOALKEEPERS + 2 && outfield >= MIN_OUTFIELD_PLAYERS + 3 {
+                continue;
+            }
+            // List up to 3 non-GK squad players for this team
+            let candidates: Vec<String> = game.players.iter()
+                .filter(|p| {
+                    p.team_id.as_deref() == Some(team_id)
+                        && p.position != Position::Goalkeeper
+                        && !p.transfer_listed
+                        && !p.loan_listed
+                })
+                .map(|p| p.id.clone())
+                .collect();
+            let list_count = 3.min(candidates.len());
+            for pid in candidates.iter().take(list_count) {
+                if let Some(p) = game.players.iter_mut().find(|pl| pl.id == *pid) {
+                    p.transfer_listed = true;
+                }
+            }
+        }
+    }
 }
 
 /// Execute a player purchase between AI teams
