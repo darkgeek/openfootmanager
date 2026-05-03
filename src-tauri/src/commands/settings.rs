@@ -1,5 +1,7 @@
 use log::info;
-use tauri::Manager as TauriManager;
+use tauri::{Manager as TauriManager, State};
+
+use crate::StateManager;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AppSettings {
@@ -70,7 +72,7 @@ pub fn get_settings(app_handle: tauri::AppHandle) -> Result<AppSettings, String>
 }
 
 #[tauri::command]
-pub fn save_settings(app_handle: tauri::AppHandle, wrapper: serde_json::Value) -> Result<(), String> {
+pub fn save_settings(app_handle: tauri::AppHandle, sm_state: State<'_, StateManager>, wrapper: serde_json::Value) -> Result<(), String> {
     // Frontend sends { settings: AppSettings } — accept both formats for compatibility.
     let settings: AppSettings = if let Some(settings_obj) = wrapper.get("settings") {
         serde_json::from_value(settings_obj.clone())
@@ -87,7 +89,15 @@ pub fn save_settings(app_handle: tauri::AppHandle, wrapper: serde_json::Value) -
     );
     let path = settings_path(&app_handle)?;
     let json = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
-    std::fs::write(&path, json).map_err(|e| format!("Failed to save settings: {}", e))
+    std::fs::write(&path, json).map_err(|e| format!("Failed to save settings: {}", e))?;
+
+    // Apply board_firing_enabled to active game state so change takes effect immediately
+    if let Some(mut game) = sm_state.get_game(|g| g.clone()) {
+        game.board_firing_enabled = settings.board_firing_enabled;
+        sm_state.set_game(game);
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
