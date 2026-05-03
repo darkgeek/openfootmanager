@@ -2177,7 +2177,14 @@ pub async fn get_settings(State(state): State<AppState>) -> Result<Json<Value>, 
 
 pub async fn save_settings(State(state): State<AppState>, Json(params): Json<Value>) -> Result<Json<()>, String> {
     use crate::commands::settings::AppSettings;
-    let settings: AppSettings = serde_json::from_value(params).map_err(|e| e.to_string())?;
+    // Frontend sends { settings: AppSettings } — try unwrapping first, then fall back to direct.
+    let settings: AppSettings = if let Some(settings_obj) = params.get("settings") {
+        serde_json::from_value(settings_obj.clone())
+            .map_err(|e| format!("Failed to parse settings object: {}", e))?
+    } else {
+        serde_json::from_value(params.clone())
+            .map_err(|e| format!("Failed to parse settings: {}", e))?
+    };
     let json = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
     std::fs::write(&state.settings_path, json).map_err(|e| format!("Failed to save settings: {}", e))?;
 
