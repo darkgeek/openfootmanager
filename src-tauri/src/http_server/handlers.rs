@@ -542,8 +542,22 @@ pub async fn load_game(
     let mgr_name = format!("{} {}", game.manager.first_name, game.manager.last_name);
 
     state.state_manager.set_save_id(params.save_id);
-    state.state_manager.set_game(game);
+    state.state_manager.set_game(game.clone());
     state.state_manager.set_stats_state(stats_state);
+
+    // Apply board_firing_enabled from settings.json so mid-game setting changes
+    // (made in a previous run) are reflected immediately on load.
+    if state.settings_path.exists() {
+        if let Ok(json) = std::fs::read_to_string(&state.settings_path) {
+            if let Ok(settings) = serde_json::from_str::<crate::commands::settings::AppSettings>(&json) {
+                if let Some(mut g) = state.state_manager.get_game(|g| g.clone()) {
+                    g.board_firing_enabled = settings.board_firing_enabled;
+                    state.state_manager.set_game(g);
+                }
+            }
+        }
+    }
+
     Ok(Json(mgr_name))
 }
 

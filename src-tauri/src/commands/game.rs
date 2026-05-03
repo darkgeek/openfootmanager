@@ -227,9 +227,27 @@ pub async fn load_game(
 
     let mgr_name = format!("{} {}", game.manager.first_name, game.manager.last_name);
 
-    state.set_save_id(save_id);
-    state.set_game(game);
+    state.set_save_id(save_id.clone());
+    state.set_game(game.clone());
     state.set_stats_state(stats_state);
+
+    // Apply board_firing_enabled from settings.json so mid-game setting changes
+    // (made in a previous run) are reflected immediately on load.
+    let settings_dir = dirs::data_local_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("openfootmanager");
+    let settings_path = settings_dir.join("settings.json");
+    if settings_path.exists() {
+        if let Ok(json) = std::fs::read_to_string(&settings_path) {
+            if let Ok(settings) = serde_json::from_str::<AppSettings>(&json) {
+                if let Some(mut g) = state.get_game(|g| g.clone()) {
+                    g.board_firing_enabled = settings.board_firing_enabled;
+                    state.set_game(g);
+                }
+            }
+        }
+    }
+
     Ok(mgr_name)
 }
 
