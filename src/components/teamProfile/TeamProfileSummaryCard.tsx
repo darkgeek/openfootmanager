@@ -72,6 +72,11 @@ export default function TeamProfileSummaryCard({
       <CardBody>
         <div className="flex flex-col gap-3">
           <InfoRow
+            icon={<DollarSign className="w-4 h-4" />}
+            label={t("teamProfile.balance")}
+            value={formatVal(team.finance)}
+          />
+          <InfoRow
             icon={<Users className="w-4 h-4" />}
             label={t("teamProfile.squadSize")}
             value={String(viewModel.roster.length)}
