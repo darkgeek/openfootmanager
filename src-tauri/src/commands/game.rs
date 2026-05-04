@@ -252,6 +252,7 @@ pub async fn load_game(
     // market supply so the user can browse players immediately after loading.
     if let Some(mut g) = state.get_game(|g| g.clone()) {
         ofm_core::ai_team_management::initialize_transfer_market(&mut g);
+        ofm_core::ai_team_management::ai_replenish_squad(&mut g);
         state.set_game(g);
     }
 

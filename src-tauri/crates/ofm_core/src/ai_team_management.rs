@@ -169,6 +169,59 @@ pub fn ai_replenish_squad_offseason(game: &mut Game) {
     }
 }
 
+
+/// Replenish any AI team that is below minimum squad size.
+/// This is the authoritative fallback: it signs youth/free-agent players
+/// to guarantee every AI team has at least MIN_GOALKEEPERS GK and
+/// MIN_OUTFIELD_PLAYERS outfield players regardless of transfer budget.
+///
+/// Called at the end of every ai_transfer_activity() and separately on
+/// match days when ai_transfer_activity is skipped, to ensure no AI
+/// team goes under-staffed.
+pub fn ai_replenish_squad(game: &mut Game) {
+    let user_team_id = game.manager.team_id.clone().unwrap_or_default();
+    
+    let team_ids: Vec<String> = game.teams.iter()
+        .filter(|t| t.id != user_team_id)
+        .map(|t| t.id.clone())
+        .collect();
+    
+    for team_id in team_ids {
+        let team_name = game.teams.iter().find(|t| t.id == team_id).map(|t| t.name.clone()).unwrap_or_default();
+        let (gks, outfield) = count_squad_size(game, &team_id);
+        
+        let mut signed = false;
+        
+        if gks < MIN_GOALKEEPERS {
+            let needed = MIN_GOALKEEPERS - gks;
+            for _ in 0..needed {
+                let _ = sign_youth_player(game, &team_id, Position::Goalkeeper);
+                signed = true;
+            }
+        }
+        
+        if outfield < MIN_OUTFIELD_PLAYERS {
+            let needed = MIN_OUTFIELD_PLAYERS - outfield;
+            let positions = [
+                Position::Defender,
+                Position::Midfielder,
+                Position::Forward,
+            ];
+            for i in 0..needed {
+                let pos = positions[i % positions.len()].clone();
+                let _ = sign_youth_player(game, &team_id, pos);
+                signed = true;
+            }
+        }
+        
+        if signed {
+            let (new_gks, new_outfield) = count_squad_size(game, &team_id);
+            info!("[AI Squad] {} replenished to {} GK / {} outfield (was {} / {})",
+                team_name, new_gks, new_outfield, gks, outfield);
+        }
+    }
+}
+
 /// Handle AI team transfers during transfer window
 pub fn ai_transfer_activity(game: &mut Game) {
     log::info!("[ai_transfer_activity] called: transfer_window_open={}", transfer_window_is_open(game));
@@ -237,48 +290,10 @@ pub fn ai_transfer_activity(game: &mut Game) {
         }
     }
     
-    // Replenish the transfer market: AI teams list squad players to keep the
-    // market stocked throughout the transfer window. This prevents the market
-    // from going empty after AI teams buy all listed players.
-    let market_count = game.players.iter().filter(|p| p.transfer_listed).count();
-    if market_count < 10 {
-        warn!("[ai_transfer_activity] market under-stocked ({}), replenishing...", market_count);
-        // Collect team IDs separately for the market replenishment loop
-        let replenish_team_ids: Vec<String> = game.teams.iter()
-            .filter(|t| t.id != user_team_id)
-            .map(|t| t.id.clone())
-            .collect();
-        for team_id in &replenish_team_ids {
-            // Skip teams that are already well-stocked
-            let (gks, outfield) = count_squad_size(game, team_id);
-            if gks >= MIN_GOALKEEPERS + 2 && outfield >= MIN_OUTFIELD_PLAYERS + 3 {
-                continue;
-            }
-            // List up to 3 non-GK squad players for this team
-            let candidates: Vec<String> = game.players.iter()
-                .filter(|p| {
-                    p.team_id.as_deref() == Some(team_id)
-                        && p.position != Position::Goalkeeper
-                        && !p.transfer_listed
-                        && !p.loan_listed
-                })
-                .map(|p| p.id.clone())
-                .collect();
-            let list_count = 3.min(candidates.len());
-            for pid in candidates.iter().take(list_count) {
-                if let Some(p) = game.players.iter_mut().find(|pl| pl.id == *pid) {
-                    p.transfer_listed = true;
-                    info!("[ai_transfer_activity] listed {} ({:?})", p.full_name, p.position);
-                }
-            }
-            if list_count > 0 {
-                let team_name = game.teams.iter().find(|t| t.id == *team_id).map(|t| t.name.as_str()).unwrap_or("?");
-                info!("[ai_transfer_activity] {} listed {} players", team_name, list_count);
-            }
-        }
-    } else {
-        info!("[ai_transfer_activity] market sufficiently stocked ({}), skipping daily listing", market_count);
-    }
+    // Replenish squad size for any AI team still below minimum.
+    // ai_transfer_activity only buys when budget allows; ai_replenish_squad
+    // signs youth players unconditionally to ensure no team goes understaffed.
+    ai_replenish_squad(game);
 }
 
 /// Execute a player purchase between AI teams

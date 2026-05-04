@@ -47,6 +47,13 @@ where
     F: FnMut(StatsState),
 {
     let today = game.clock.current_date.format("%Y-%m-%d").to_string();
+    
+    let transfer_window_open = ai_team_management::transfer_window_is_open(game);
+    let listed_before = game.players.iter().filter(|p| p.transfer_listed).count();
+    let season_phase = format!("{:?}", game.season_context.phase);
+    let tw_status = format!("{:?}", game.season_context.transfer_window.status);
+    log::info!("[turn] process_day {}: transfer_window_open={}, phase={}, tw_status={}, listed_before={}",
+        today, transfer_window_open, season_phase, tw_status, listed_before);
 
     let has_match_today = game.league.as_ref().is_some_and(|league| {
         league
@@ -301,6 +308,12 @@ pub fn simulate_other_matches_with_capture<F>(
     for idx in fixture_indices {
         simulate_single_match_with_capture(game, idx, on_capture);
     }
+
+    // Replenish AI squads after every match day so no AI team ever goes understaffed.
+    // This also ensures AI teams have enough players even when the transfer window
+    // is closed (which skips ai_transfer_activity) or when using live/spectator mode
+    // (which bypasses process_day entirely and never calls finish_live_match_day).
+    ai_team_management::ai_replenish_squad(game);
 }
 
 fn simulate_single_match_with_capture<F>(game: &mut Game, idx: usize, on_capture: &mut F)
