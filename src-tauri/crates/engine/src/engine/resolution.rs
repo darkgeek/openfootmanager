@@ -355,7 +355,15 @@ fn snap_shooter<R: Rng>(ctx: &MatchContext, side: Side, rng: &mut R) -> PlayerSn
 fn resolve_shot<R: Rng>(ctx: &mut MatchContext, minute: u8, att_side: Side, rng: &mut R) {
     let def_side = att_side.opposite();
     let shooter = snap_shooter(ctx, att_side, rng);
-    let assister = snap_player(ctx, att_side, Position::Midfielder, rng);
+    // Pick assister; re-roll if it's the same player as the shooter
+    let mut assister = snap_player(ctx, att_side, Position::Midfielder, rng);
+    for _ in 0..3 {
+        if assister.id != shooter.id {
+            break;
+        }
+        assister = snap_player(ctx, att_side, Position::Midfielder, rng);
+    }
+    let has_assist = assister.id != shooter.id;
     let goalkeeper = snap_player(ctx, def_side, Position::Goalkeeper, rng);
     let zone = Zone::attacking_box(att_side);
 
@@ -408,11 +416,12 @@ fn resolve_shot<R: Rng>(ctx: &mut MatchContext, minute: u8, att_side: Side, rng:
 
     // Great chance - high quality shot setup
     if shoot_rating > 80.0 && goal_roll < conversion * 1.2 {
-        ctx.emit(
-            MatchEvent::new(minute, EventType::GreatChance, att_side, zone)
-                .with_player(&shooter.id)
-                .with_secondary(&assister.id),
-        );
+        let mut evt = MatchEvent::new(minute, EventType::GreatChance, att_side, zone)
+            .with_player(&shooter.id);
+        if has_assist {
+            evt = evt.with_secondary(&assister.id);
+        }
+        ctx.emit(evt);
     } else {
         // Regular on-target shot
         ctx.emit(
@@ -423,11 +432,12 @@ fn resolve_shot<R: Rng>(ctx: &mut MatchContext, minute: u8, att_side: Side, rng:
 
     // Goal or saved
     if goal_roll < conversion {
-        ctx.emit(
-            MatchEvent::new(minute, EventType::Goal, att_side, zone)
-                .with_player(&shooter.id)
-                .with_secondary(&assister.id),
-        );
+        let mut goal_evt = MatchEvent::new(minute, EventType::Goal, att_side, zone)
+            .with_player(&shooter.id);
+        if has_assist {
+            goal_evt = goal_evt.with_secondary(&assister.id);
+        }
+        ctx.emit(goal_evt);
         ctx.emit(
             MatchEvent::new(minute, EventType::Celebration, att_side, zone)
                 .with_player(&shooter.id),
