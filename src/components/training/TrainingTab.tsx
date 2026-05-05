@@ -6,6 +6,7 @@ import {
   Crosshair,
   Feather,
   Flame,
+  Goal,
   HeartPulse,
   Info,
   Scale,
@@ -32,6 +33,7 @@ const TRAINING_FOCUS_IDS = [
   "Tactical",
   "Defending",
   "Attacking",
+  "Goalkeeping",
   "Recovery",
 ] as const;
 
@@ -41,6 +43,7 @@ const TRAINING_FOCUS_ICONS: Record<string, ReactNode> = {
   Tactical: <Brain className="w-6 h-6" />,
   Defending: <Shield className="w-6 h-6" />,
   Attacking: <Zap className="w-6 h-6" />,
+  Goalkeeping: <Goal className="w-6 h-6" />,
   Recovery: <BedDouble className="w-6 h-6" />,
 };
 
@@ -50,7 +53,8 @@ const TRAINING_FOCUS_ATTRS: Record<string, string[]> = {
   Tactical: ["positioning", "vision", "decisions", "composure"],
   Defending: ["tackling", "defending", "strength", "positioning"],
   Attacking: ["shooting", "dribbling", "pace"],
-  Recovery: [],
+  Goalkeeping: ["handling", "reflexes", "aerial", "positioning", "decisions"],
+  Recovery: []
 };
 
 const INTENSITY_IDS = ["Low", "Medium", "High"] as const;
