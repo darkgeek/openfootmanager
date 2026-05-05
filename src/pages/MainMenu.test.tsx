@@ -207,7 +207,7 @@ describe("MainMenu", () => {
       });
       expect(screen.getByTestId("world-select")).toBeInTheDocument();
 
-      fireEvent.click(screen.getByText("start-world"));
+      fireEvent.click(screen.getByText("worldSelect.startCareer"));
 
       await waitFor(() => {
         expect(mockedInvoke).toHaveBeenCalledWith(
@@ -309,7 +309,7 @@ describe("MainMenu", () => {
       expect(mockedInvoke).toHaveBeenCalledWith("list_world_databases");
     });
 
-    fireEvent.click(screen.getByText("start-world"));
+    fireEvent.click(screen.getByText("worldSelect.startCareer"));
 
     await waitFor(() => {
       expect(mockedInvoke).toHaveBeenCalledWith(

@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS = {
   confirm_advance: false,
   ui_scale: "normal",
   high_contrast: false,
+  board_firing_enabled: true,
 } as const;
 
 beforeEach(() => {

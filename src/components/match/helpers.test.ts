@@ -181,19 +181,19 @@ describe("calcOvr (match)", () => {
 describe("getEventDisplay", () => {
   it("returns known display for Goal event", () => {
     const display = getEventDisplay({ minute: 10, event_type: "Goal", side: "Home", zone: "Box", player_id: "p1", secondary_player_id: null });
-    expect(display.color).toBe("text-accent-700 dark:text-accent-400");
+    expect(display.color).toBe("text-yellow-600 dark:text-yellow-400");
     expect(display.important).toBe(true);
   });
 
   it("returns known display for YellowCard event", () => {
     const display = getEventDisplay({ minute: 25, event_type: "YellowCard", side: "Away", zone: "Midfield", player_id: "p2", secondary_player_id: null });
-    expect(display.color).toBe("text-yellow-400");
+    expect(display.color).toBe("text-yellow-500");
     expect(display.important).toBe(true);
   });
 
   it("returns known display for ShotSaved (non-important)", () => {
     const display = getEventDisplay({ minute: 30, event_type: "ShotSaved", side: "Home", zone: "Box", player_id: "p1", secondary_player_id: null });
-    expect(display.color).toBe("text-green-700 dark:text-green-400");
+    expect(display.color).toBe("text-cyan-600 dark:text-cyan-400");
     expect(display.important).toBe(false);
   });
 
