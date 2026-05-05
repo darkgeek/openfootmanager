@@ -76,6 +76,11 @@ pub struct Player {
     pub suspension_games_remaining: u8,  // Games remaining until player can play again
     #[serde(default = "default_zero")]
     pub accumulated_yellow_cards: u8,   // Yellow cards this season (resets each season)
+
+    /// Date when this player became a free agent (YYYY-MM-DD), if applicable.
+    /// Used to auto-cleanup long-term free agents after 60 days.
+    #[serde(default)]
+    pub free_agent_since: Option<String>,
 }
 
 fn default_zero() -> u8 { 0 }
@@ -535,6 +540,7 @@ impl Player {
             morale_core: PlayerMoraleCore::default(),
             suspension_games_remaining: 0,
             accumulated_yellow_cards: 0,
+            free_agent_since: None,
         }
     }
 }

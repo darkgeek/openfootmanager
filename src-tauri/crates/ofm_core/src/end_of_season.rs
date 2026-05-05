@@ -502,7 +502,12 @@ pub fn process_end_of_season(game: &mut Game) -> EndOfSeasonSummary {
     // Apply season-end growth for all players
     apply_season_end_growth(game);
 
-    // 5b. Replenish AI team squads for new season
+    // 5b. Process contract expiries for players whose contracts ended during the season
+    crate::contracts::process_contract_expiries(game);
+    // Clean up long-term free agents
+    crate::contracts::cleanup_long_term_free_agents(game);
+
+    // 5c. Replenish AI team squads for new season
     crate::ai_team_management::ai_end_of_season_replenishment(game);
 
     // 6. Update manager career stats

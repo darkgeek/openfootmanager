@@ -83,6 +83,8 @@ where
     }
 
     crate::contracts::process_contract_expiries(game);
+    // Remove free agents who have been unsigned for > 60 days
+    crate::contracts::cleanup_long_term_free_agents(game);
 
     // Weekly financial processing (wages, matchday income, warnings)
     crate::finances::process_weekly_finances(game);
@@ -141,6 +143,8 @@ pub fn finish_live_match_day(game: &mut Game) {
     }
 
     crate::contracts::process_contract_expiries(game);
+    // Remove free agents who have been unsigned for > 60 days
+    crate::contracts::cleanup_long_term_free_agents(game);
 
     board_objectives::generate_objectives(game);
     board_objectives::update_objective_progress(game);

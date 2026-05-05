@@ -484,6 +484,7 @@ pub fn process_contract_expiries(game: &mut Game) {
             player.transfer_listed = false;
             player.loan_listed = false;
             player.transfer_offers.clear();
+            player.free_agent_since = Some(today.clone());
 
             game.messages.push(contract_expired_message(
                 &player_id,
@@ -805,4 +806,44 @@ fn contract_expired_message(
     .with_category(MessageCategory::Contract)
     .with_priority(MessagePriority::Urgent)
     .with_sender_role("Assistant Manager")
+}
+
+/// Remove players who have been free agents for more than 60 days.
+/// This prevents accumulation of "ghost" players in game.players.
+pub fn cleanup_long_term_free_agents(game: &mut Game) {
+    let today = game.clock.current_date.format("%Y-%m-%d").to_string();
+    let today_naive = chrono::NaiveDate::parse_from_str(&today, "%Y-%m-%d").unwrap();
+
+    // Collect indices of long-term free agents, in reverse order
+    let to_remove: Vec<usize> = game
+        .players
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, player)| {
+            if player.team_id.is_some() {
+                return None;
+            }
+            let free_since = player.free_agent_since.as_ref()?;
+            let free_date = chrono::NaiveDate::parse_from_str(free_since, "%Y-%m-%d").ok()?;
+            let days_free = (today_naive - free_date).num_days();
+            if days_free > 60 {
+                Some(idx)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    if to_remove.is_empty() {
+        return;
+    }
+
+    for idx in to_remove.into_iter().rev() {
+        let player_name = game.players[idx].match_name.clone();
+        log::info!(
+            "[cleanup] Removing long-term free agent {} from game.players",
+            player_name
+        );
+        game.players.remove(idx);
+    }
 }
