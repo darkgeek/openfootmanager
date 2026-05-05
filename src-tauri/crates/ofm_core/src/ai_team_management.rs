@@ -91,7 +91,7 @@ fn generate_random_name(country: &str) -> String {
         let mut rng = rand::rng();
         let last = last_names[rng.random_range(0..last_names.len())];
         let first = first_names[rng.random_range(0..first_names.len())];
-        return format!("{} {}", last, first);
+        return format!("{}{}", last, first);
     }
     let first_names = ["James", "Marcus", "Oliver", "Luke", "Harry", "Jack", "Thomas", "William", "Daniel", "Ryan"];
     let last_names = ["Smith", "Jones", "Williams", "Brown", "Taylor", "Wilson", "Davies", "Evans", "Thomas", "Roberts"];
