@@ -152,6 +152,31 @@ function searchAndSelectNationality(
 }
 
 describe("MainMenu", () => {
+  function mockFetch() {
+    const responses: Record<string, unknown> = {
+      list_world_databases: [],
+      start_new_game: { id: "game-1" },
+    };
+    vi.spyOn(window, 'fetch').mockImplementation(async (url: RequestInfo | URL, init?: RequestInit) => {
+      const urlStr = typeof url === 'string' ? url : url.toString();
+      const match = urlStr.match(/\/api\/(\w+)/);
+      if (match) {
+        const cmd = match[1];
+        const data = responses[cmd];
+        if (data !== undefined) {
+          // Also call mockedInvoke with the body params for assertions
+          const body = init?.body ? JSON.parse(init.body as string) : {};
+          mockedInvoke(cmd, body);
+          return new Response(JSON.stringify(data), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+      }
+      return new Response('{}', { status: 200 });
+    });
+  }
+
   beforeEach(() => {
     navigateMock.mockReset();
     setGameActiveMock.mockReset();
@@ -159,7 +184,7 @@ describe("MainMenu", () => {
     latestDatePickerOnChange = null;
     translationState.language = "en";
     mockedInvoke.mockReset();
-    mockedInvoke.mockImplementation(async (command: string) => {
+    mockedInvoke.mockImplementation(async (command: string, _args?: unknown) => {
       if (command === "list_world_databases") {
         return [];
       }
@@ -170,6 +195,7 @@ describe("MainMenu", () => {
 
       return null;
     });
+    mockFetch();
     // MainMenu defers focus with requestAnimationFrame; defer one microtask so React
     // commits setFormErrors before focus runs (matches real rAF ordering).
     vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
@@ -180,6 +206,7 @@ describe("MainMenu", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it.each(["es", "de", "fr", "it", "pt", "pt-BR"])(
@@ -200,14 +227,15 @@ describe("MainMenu", () => {
         }),
       ).toBeInTheDocument();
 
-      fireEvent.click(screen.getByText("createManager.chooseWorld"));
+      fireEvent.submit(screen.getByTestId("create-manager-form"));
 
       await waitFor(() => {
-        expect(mockedInvoke).toHaveBeenCalledWith("list_world_databases");
+        expect(mockedInvoke).toHaveBeenCalledWith("list_world_databases", expect.anything());
       });
       expect(screen.getByTestId("world-select")).toBeInTheDocument();
 
-      fireEvent.click(screen.getByText("worldSelect.startCareer"));
+      const startBtn = screen.getByRole("button", { name: /start/i });
+      fireEvent.click(startBtn);
 
       await waitFor(() => {
         expect(mockedInvoke).toHaveBeenCalledWith(
@@ -303,13 +331,13 @@ describe("MainMenu", () => {
       }),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("createManager.chooseWorld"));
+    fireEvent.submit(screen.getByTestId("create-manager-form"));
 
     await waitFor(() => {
-      expect(mockedInvoke).toHaveBeenCalledWith("list_world_databases");
+      expect(mockedInvoke).toHaveBeenCalledWith("list_world_databases", expect.anything());
     });
 
-    fireEvent.click(screen.getByText("worldSelect.startCareer"));
+    fireEvent.click(screen.getByText("start-world"));
 
     await waitFor(() => {
       expect(mockedInvoke).toHaveBeenCalledWith(
@@ -325,14 +353,14 @@ describe("MainMenu", () => {
     render(<MainMenu />);
 
     openCreateManagerForm();
-    fireEvent.click(screen.getByText("createManager.chooseWorld"));
+    fireEvent.submit(screen.getByTestId("create-manager-form"));
 
     await waitFor(() => {
       expect(
         screen.getByPlaceholderText("createManager.placeholderFirst"),
       ).toHaveFocus();
     });
-    expect(mockedInvoke).not.toHaveBeenCalledWith("list_world_databases");
+    expect(mockedInvoke).not.toHaveBeenCalledWith("list_world_databases", expect.anything());
   });
 
   it("focuses the next invalid field in order when earlier fields are valid", async () => {
@@ -343,7 +371,7 @@ describe("MainMenu", () => {
       screen.getByPlaceholderText("createManager.placeholderFirst"),
       { target: { value: "Ada" } },
     );
-    fireEvent.click(screen.getByText("createManager.chooseWorld"));
+    fireEvent.submit(screen.getByTestId("create-manager-form"));
 
     await waitFor(() => {
       expect(
@@ -371,12 +399,12 @@ describe("MainMenu", () => {
     expect(screen.getByText("validation.minAge")).toBeInTheDocument();
 
     selectNationality("en", "ES");
-    fireEvent.click(screen.getByText("createManager.chooseWorld"));
+    fireEvent.submit(screen.getByTestId("create-manager-form"));
 
     await waitFor(() => {
       expect(screen.getByLabelText("manager-date-of-birth")).toHaveFocus();
     });
-    expect(mockedInvoke).not.toHaveBeenCalledWith("list_world_databases");
+    expect(mockedInvoke).not.toHaveBeenCalledWith("list_world_databases", expect.anything());
     expect(screen.queryByTestId("world-select")).not.toBeInTheDocument();
   });
 });

@@ -510,6 +510,7 @@ export default function MainMenu() {
           {/* Step 1: Create Manager Form */}
           {menuState === "create" && (
             <form
+              data-testid="create-manager-form"
               onSubmit={handleGoToWorldSelect}
               className="flex flex-col gap-4"
             >
