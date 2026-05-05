@@ -533,6 +533,45 @@ mod tests {
     }
 
     #[test]
+    fn sign_youth_player_age_is_15_to_18() {
+        let team_id = "test_age_team";
+        let mut game = make_test_game_with_team(team_id);
+        game.teams.push(Team::new(
+            team_id.to_string(),
+            "Test Age FC".to_string(),
+            "TAG".to_string(),
+            "England".to_string(),
+            "London".to_string(),
+            "Test Ground".to_string(),
+            30_000,
+        ));
+
+        // Generate several youth players and verify each is 15-18
+        let current_year: u32 = game.clock.current_date.format("%Y").to_string().parse().unwrap();
+        for _ in 0..10 {
+            sign_youth_player(&mut game, team_id, Position::Defender);
+        }
+
+        let team_players: Vec<&Player> = game.players.iter()
+            .filter(|p| p.team_id.as_deref() == Some(team_id))
+            .collect();
+
+        assert!(team_players.len() >= 10, "Should have generated at least 10 youth players");
+
+        for player in &team_players {
+            let birth_year: u32 = player.date_of_birth.split('-').next()
+                .and_then(|y| y.parse().ok())
+                .unwrap_or(0);
+            let age = current_year - birth_year;
+            assert!(
+                (15..=18).contains(&age),
+                "Youth player {} age {} should be between 15 and 18",
+                player.match_name, age
+            );
+        }
+    }
+
+    #[test]
     fn ai_end_of_season_lists_players_for_transfer() {
         let user_team_id = "user_team";
         let ai_team_id = "ai_team";
