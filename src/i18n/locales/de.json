@@ -240,7 +240,11 @@
     "potExcellent": "Hervorragend",
     "potPromising": "Vielversprechend",
     "potDecent": "Ordentlich",
-    "potLimited": "Begrenzt"
+    "potLimited": "Begrenzt",
+    "monthlyRecommendations": "Monatliche Empfehlungen",
+    "noRecommendations": "Keine Jugendempfehlungen diesen Monat.",
+    "checkNextMonth": "Schauen Sie zu Monatsbeginn wieder vorbei.",
+    "recruit": "Verpflichten"
   },
   "common": {
     "loading": "Lädt...",

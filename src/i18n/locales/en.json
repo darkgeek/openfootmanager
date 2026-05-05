@@ -247,7 +247,11 @@
     "potExcellent": "Excellent",
     "potPromising": "Promising",
     "potDecent": "Decent",
-    "potLimited": "Limited"
+    "potLimited": "Limited",
+    "monthlyRecommendations": "Monthly Recommendations",
+    "noRecommendations": "No youth recommendations this month.",
+    "checkNextMonth": "Check again at the start of next month.",
+    "recruit": "Recruit"
   },
   "common": {
     "loading": "Loading...",

@@ -240,7 +240,11 @@
     "potExcellent": "Excelente",
     "potPromising": "Promissor",
     "potDecent": "Razoável",
-    "potLimited": "Limitado"
+    "potLimited": "Limitado",
+    "monthlyRecommendations": "Recomendações Mensais",
+    "noRecommendations": "Sem recomendações este mês.",
+    "checkNextMonth": "Volte a verificar no início do próximo mês.",
+    "recruit": "Recrutar"
   },
   "common": {
     "loading": "Carregando...",
