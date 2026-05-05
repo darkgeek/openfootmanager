@@ -449,6 +449,7 @@ mod tests {
             training: 2,
             medical: 3,
             scouting: 4,
+            youth: 1,
         };
 
         upsert_team(db.conn(), &team).unwrap();

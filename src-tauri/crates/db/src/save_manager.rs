@@ -491,6 +491,9 @@ mod tests {
             board_objectives: vec![],
             season_context: domain::season::SeasonContext::default(),
             training_snapshots: vec![],
+            board_firing_enabled: true,
+            days_since_last_job_offer: None,
+            youth_recommendations: vec![],
         }
     }
 
