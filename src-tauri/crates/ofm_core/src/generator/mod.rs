@@ -1,6 +1,7 @@
 pub(crate) mod data;
 pub mod definitions;
 mod generation;
+pub use generation::country_to_iso;
 pub mod world_io;
 
 pub use definitions::*;

@@ -75,7 +75,24 @@ fn generate_youth_attributes(base_ovr: u8) -> PlayerAttributes {
 }
 
 /// Generate a random name
-fn generate_random_name() -> String {
+/// Generate a random name appropriate for the given country.
+/// Uses the nationality name pools from the generator if available,
+/// falling back to simple English defaults for unrecognised countries.
+fn generate_random_name(country: &str) -> String {
+    // Map country to ISO code to pick the right name pool
+    let code = crate::generator::country_to_iso(country);
+    // For CN, return Chinese-format name: surname + given name (no space)
+    if code == "CN" {
+        let last_names = ["王", "李", "张", "刘", "陈", "杨", "赵", "黄", "周", "吴",
+            "徐", "孙", "胡", "朱", "高", "林", "何", "郭", "马", "罗"];
+        let first_names = ["志强", "伟杰", "明辉", "浩宇", "俊杰", "建平", "志明", "永强", "建国", "文杰",
+            "海涛", "卫东", "建华", "志伟", "嘉诚", "瑞华", "晓明", "洪波", "泽宇",
+            "天佑", "宇轩", "子涵", "梓豪", "雨泽", "俊豪", "博文", "鹏飞", "伟国", "振华"];
+        let mut rng = rand::rng();
+        let last = last_names[rng.random_range(0..last_names.len())];
+        let first = first_names[rng.random_range(0..first_names.len())];
+        return format!("{} {}", last, first);
+    }
     let first_names = ["James", "Marcus", "Oliver", "Luke", "Harry", "Jack", "Thomas", "William", "Daniel", "Ryan"];
     let last_names = ["Smith", "Jones", "Williams", "Brown", "Taylor", "Wilson", "Davies", "Evans", "Thomas", "Roberts"];
     let mut rng = rand::rng();
@@ -98,7 +115,7 @@ fn sign_youth_player(game: &mut Game, team_id: &str, position: Position) -> Opti
         let mut rng = rand::rng();
         let player_id = format!("ai_youth_{}_{}", team_id, rng.random::<u64>());
         
-        let full_name = generate_random_name();
+        let full_name = generate_random_name(&team.country);
         
         let birth_year = game.clock.current_date.format("%Y").to_string().parse::<u32>().unwrap_or(2026);
         let age = rng.random_range(15..=18);

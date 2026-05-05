@@ -96,7 +96,7 @@ pub(super) fn pick_name_from_def(
     ("Player".to_string(), "Unknown".to_string())
 }
 
-pub(super) fn country_to_iso(country: &str) -> &str {
+pub fn country_to_iso(country: &str) -> &str {
     match country {
         "England" | "ENG" => "ENG",
         "Scotland" | "SCO" => "SCO",
