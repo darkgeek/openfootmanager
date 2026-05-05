@@ -32,6 +32,7 @@ impl GamePersistenceWriter {
                 game_date: game.clock.current_date.to_rfc3339(),
                 created_at: now.clone(),
                 last_played_at: now,
+                training_snapshots: game.training_snapshots.clone(),
             },
         )?;
 
@@ -146,7 +147,7 @@ impl GamePersistenceReader {
             season_context: domain::season::SeasonContext::default(),
             days_since_last_job_offer: None,
             youth_recommendations: vec![],
-            training_snapshots: vec![],
+            training_snapshots: meta.training_snapshots,
             board_firing_enabled: true,
         };
         ofm_core::season_context::refresh_game_context(&mut game);

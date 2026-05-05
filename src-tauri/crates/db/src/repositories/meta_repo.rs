@@ -1,3 +1,4 @@
+use ofm_core::training_report::TeamTrainingSnapshot;
 use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 
@@ -11,13 +12,16 @@ pub struct GameMeta {
     pub game_date: String,
     pub created_at: String,
     pub last_played_at: String,
+    pub training_snapshots: Vec<TeamTrainingSnapshot>,
 }
 
 /// Insert or replace the singleton game_meta row.
 pub fn upsert_meta(conn: &Connection, meta: &GameMeta) -> Result<(), String> {
+    let snapshots_json = serde_json::to_string(&meta.training_snapshots)
+        .map_err(|e| format!("Failed to serialize training_snapshots: {}", e))?;
     conn.execute(
-        "INSERT OR REPLACE INTO game_meta (id, save_id, save_name, manager_id, start_date, game_date, created_at, last_played_at)
-         VALUES ('singleton', ?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT OR REPLACE INTO game_meta (id, save_id, save_name, manager_id, start_date, game_date, created_at, last_played_at, training_snapshots)
+         VALUES ('singleton', ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![
             meta.save_id,
             meta.save_name,
@@ -26,6 +30,7 @@ pub fn upsert_meta(conn: &Connection, meta: &GameMeta) -> Result<(), String> {
             meta.game_date,
             meta.created_at,
             meta.last_played_at,
+            snapshots_json,
         ],
     )
     .map_err(|e| format!("Failed to upsert game_meta: {}", e))?;
@@ -36,13 +41,16 @@ pub fn upsert_meta(conn: &Connection, meta: &GameMeta) -> Result<(), String> {
 pub fn load_meta(conn: &Connection) -> Result<Option<GameMeta>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT save_id, save_name, manager_id, start_date, game_date, created_at, last_played_at
+            "SELECT save_id, save_name, manager_id, start_date, game_date, created_at, last_played_at, COALESCE(training_snapshots, '[]')
              FROM game_meta WHERE id = 'singleton'",
         )
         .map_err(|e| format!("Failed to prepare meta query: {}", e))?;
 
     let mut rows = stmt
         .query_map([], |row| {
+            let snapshots_json: String = row.get(7)?;
+            let training_snapshots: Vec<TeamTrainingSnapshot> =
+                serde_json::from_str(&snapshots_json).unwrap_or_default();
             Ok(GameMeta {
                 save_id: row.get(0)?,
                 save_name: row.get(1)?,
@@ -51,6 +59,7 @@ pub fn load_meta(conn: &Connection) -> Result<Option<GameMeta>, String> {
                 game_date: row.get(4)?,
                 created_at: row.get(5)?,
                 last_played_at: row.get(6)?,
+                training_snapshots,
             })
         })
         .map_err(|e| format!("Failed to query meta: {}", e))?;
@@ -82,6 +91,7 @@ mod tests {
             game_date: "2026-07-15T00:00:00Z".to_string(),
             created_at: "2026-03-05T18:00:00Z".to_string(),
             last_played_at: "2026-03-05T19:00:00Z".to_string(),
+            training_snapshots: vec![],
         };
 
         upsert_meta(db.conn(), &meta).unwrap();
@@ -111,6 +121,7 @@ mod tests {
             game_date: "2026-07-15T00:00:00Z".to_string(),
             created_at: "2026-03-05T18:00:00Z".to_string(),
             last_played_at: "2026-03-05T19:00:00Z".to_string(),
+            training_snapshots: vec![],
         };
         upsert_meta(db.conn(), &meta1).unwrap();
 
@@ -122,6 +133,7 @@ mod tests {
             game_date: "2026-08-01T00:00:00Z".to_string(),
             created_at: "2026-03-05T18:00:00Z".to_string(),
             last_played_at: "2026-03-06T10:00:00Z".to_string(),
+            training_snapshots: vec![],
         };
         upsert_meta(db.conn(), &meta2).unwrap();
 
