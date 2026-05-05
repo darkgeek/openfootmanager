@@ -6,7 +6,7 @@ use domain::manager::Manager;
 use domain::player::{Player, PlayerAttributes, PlayerSeasonStats, Position};
 use domain::team::{FinancialTransactionKind, Team};
 use ofm_core::clock::GameClock;
-use ofm_core::end_of_season::{is_season_complete, process_end_of_season};
+use ofm_core::end_of_season::{is_season_complete, process_end_of_season, process_retirements};
 use ofm_core::game::{BoardObjective, Game, ObjectiveType};
 
 // ---------------------------------------------------------------------------
@@ -1041,4 +1041,215 @@ fn season_end_board_message_top_four_uses_correct_body_key() {
         msg.i18n_params.contains_key("suffix"),
         "topFour key must include suffix param"
     );
+}
+
+// ---------------------------------------------------------------------------
+// Retirement tests
+// ---------------------------------------------------------------------------
+
+/// Helper: create a player with a specific birth year (all other attrs default).
+fn make_player_with_birth_year(id: &str, name: &str, team_id: &str, pos: Position, birth_year: u32) -> Player {
+    let mut p = make_player(id, name, team_id, pos);
+    // Set the birth year while keeping month/day
+    p.date_of_birth = format!("{}-01-01", birth_year);
+    p
+}
+
+/// Helper: create a player with specific birth year and overall rating.
+fn make_player_with_ovr(id: &str, name: &str, team_id: &str, pos: Position, birth_year: u32, ovr: u8) -> Player {
+    let mut p = make_player_with_birth_year(id, name, team_id, pos, birth_year);
+    // Set all outfield attributes to the same value for a deterministic overall
+    let attrs = PlayerAttributes {
+        pace: ovr,
+        stamina: ovr,
+        strength: ovr,
+        agility: ovr,
+        passing: ovr,
+        shooting: ovr,
+        tackling: ovr,
+        dribbling: ovr,
+        defending: ovr,
+        positioning: ovr,
+        vision: ovr,
+        decisions: ovr,
+        composure: ovr,
+        aggression: 50,
+        teamwork: ovr,
+        leadership: 50,
+        handling: 20,
+        reflexes: 30,
+        aerial: 60,
+    };
+    p.attributes = attrs;
+    p
+}
+
+/// Helper: migrate a player onto a team's references so we can check cleanup.
+fn add_player_to_team_refs(team: &mut Team, player_id: &str) {
+    team.starting_xi_ids.push(player_id.to_string());
+    team.match_roles.captain = Some(player_id.to_string());
+}
+
+#[test]
+fn retirement_age_39_is_forced() {
+    let mut game = make_completed_season_game();
+    // game date = 2026-05-20, birth year 1987 → age 39
+    let player = make_player_with_birth_year("old_p1", "Old One", "team1", Position::Forward, 1987);
+    game.players.push(player);
+
+    let before = game.players.len();
+    process_retirements(&mut game, "2026-05-20");
+    let after = game.players.len();
+
+    assert_eq!(after, before - 1, "Age 39 player must be forced to retire");
+    assert!(
+        !game.players.iter().any(|p| p.id == "old_p1"),
+        "Retired player must be removed from game.players"
+    );
+}
+
+#[test]
+fn retirement_age_35_does_not_retire() {
+    let mut game = make_completed_season_game();
+    // birth year 1991 → age 35
+    let player = make_player_with_birth_year("young_p1", "Young One", "team1", Position::Forward, 1991);
+    game.players.push(player);
+
+    let before = game.players.len();
+    process_retirements(&mut game, "2026-05-20");
+    let after = game.players.len();
+
+    assert_eq!(after, before, "Age 35 player must NOT retire");
+    assert!(
+        game.players.iter().any(|p| p.id == "young_p1"),
+        "Age 35 player must remain in game.players"
+    );
+}
+
+#[test]
+fn retirement_high_reputation_generates_news() {
+    let mut game = make_completed_season_game();
+    // birth year 1987 → age 39, overall 75 → high reputation
+    let player = make_player_with_ovr("star_p1", "Star Player", "team1", Position::Forward, 1987, 75);
+    game.players.push(player);
+
+    let news_before = game.news.len();
+    process_retirements(&mut game, "2026-05-20");
+    let news_after = game.news.len();
+
+    assert_eq!(news_after, news_before + 1, "High-reputation retirement must generate a news article");
+    assert!(
+        game.news.iter().any(|a| a.id == "retirement_star_p1"),
+        "News article ID must match retired player"
+    );
+    let article = game.news.iter().find(|a| a.id == "retirement_star_p1").unwrap();
+    assert!(
+        article.player_ids.contains(&"star_p1".to_string()),
+        "News article must reference the retired player"
+    );
+    assert!(
+        article.headline.contains("Star Player"),
+        "News article headline must contain player name"
+    );
+}
+
+#[test]
+fn retirement_low_reputation_no_news() {
+    let mut game = make_completed_season_game();
+    // birth year 1987 → age 39, overall 50 → low reputation
+    let player = make_player_with_ovr("mediocre_p1", "Mediocre", "team1", Position::Forward, 1987, 50);
+    game.players.push(player);
+
+    let news_before = game.news.len();
+    process_retirements(&mut game, "2026-05-20");
+    let news_after = game.news.len();
+
+    assert_eq!(
+        news_after, news_before,
+        "Low-reputation retirement must NOT generate a news article"
+    );
+}
+
+#[test]
+fn retirement_cleans_up_team_references() {
+    let mut game = make_completed_season_game();
+    let player = make_player_with_birth_year("captain_p1", "Captain", "team1", Position::Forward, 1987);
+    let player_id = player.id.clone();
+    game.players.push(player);
+
+    // Add player to team references
+    if let Some(team) = game.teams.iter_mut().find(|t| t.id == "team1") {
+        add_player_to_team_refs(team, &player_id);
+    }
+
+    process_retirements(&mut game, "2026-05-20");
+
+    // Verify team references are cleaned up
+    if let Some(team) = game.teams.iter().find(|t| t.id == "team1") {
+        assert!(
+            !team.starting_xi_ids.contains(&player_id),
+            "Retired player must be removed from starting_xi_ids"
+        );
+        assert!(
+            team.match_roles.captain.as_deref() != Some(&player_id),
+            "Retired player must be removed from captain role"
+        );
+    }
+}
+
+#[test]
+fn retirement_multiple_players_independent() {
+    let mut game = make_completed_season_game();
+    // Two age-39 players (forced retirement) and one age-35 (should stay)
+    let p1 = make_player_with_birth_year("old_a", "Old A", "team1", Position::Forward, 1987);
+    let p2 = make_player_with_birth_year("old_b", "Old B", "team2", Position::Defender, 1987);
+    let p3 = make_player_with_birth_year("young_c", "Young C", "team1", Position::Midfielder, 1991);
+    game.players.push(p1);
+    game.players.push(p2);
+    game.players.push(p3);
+
+    let before = game.players.len();
+    process_retirements(&mut game, "2026-05-20");
+    let after = game.players.len();
+
+    assert_eq!(after, before - 2, "Both age-39 players must retire");
+    assert!(
+        !game.players.iter().any(|p| p.id == "old_a"),
+        "old_a must be removed"
+    );
+    assert!(
+        !game.players.iter().any(|p| p.id == "old_b"),
+        "old_b must be removed"
+    );
+    assert!(
+        game.players.iter().any(|p| p.id == "young_c"),
+        "Age-35 player must remain"
+    );
+}
+
+#[test]
+fn retirement_works_within_process_end_of_season() {
+    let mut game = make_completed_season_game();
+    // Add an old player (age 39) with high reputation
+    let player = make_player_with_ovr("legend", "Club Legend", "team1", Position::Forward, 1987, 85);
+    game.players.push(player);
+
+    process_end_of_season(&mut game);
+
+    // The old player should be gone (retired) while existing players remain
+    assert!(
+        !game.players.iter().any(|p| p.id == "legend"),
+        "Age-39 player must retire during process_end_of_season"
+    );
+    assert!(
+        game.players.iter().any(|p| p.id == "p1"),
+        "Younger player p1 must still exist"
+    );
+    assert!(
+        game.players.iter().any(|p| p.id == "p2"),
+        "Younger player p2 must still exist"
+    );
+    // Note: news articles from retirement are generated but then cleared
+    // by game.news.clear() later in process_end_of_season.
+    // Direct news generation is tested in retirement_high_reputation_generates_news
 }

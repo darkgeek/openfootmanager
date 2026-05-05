@@ -4,6 +4,7 @@ use crate::season_awards::compute_season_awards;
 use chrono::Duration;
 use domain::league::{FixtureStatus, League};
 use domain::message::*;
+use domain::news::{NewsArticle, NewsCategory};
 use domain::player::{PlayerSeasonStats, PlayerAttributes};
 use domain::team::{FinancialTransaction, FinancialTransactionKind, TeamSeasonRecord};
 use rand::RngExt;
@@ -145,6 +146,97 @@ fn apply_season_end_growth(game: &mut Game) {
         };
         player.market_value = ((new_overall as f64).powi(2) * 500.0 * age_factor) as u64;
         player.wage = (player.market_value / 200).max(500) as u32;
+    }
+}
+
+/// Process player retirements at the end of each season.
+/// Rules:
+/// - Age > 35: probability = (age - 35) × 0.25 (25% at 36, 50% at 37, 75% at 38)
+/// - Age ≥ 39: forced retirement (100%)
+/// - Players with overall rating > 70 get a news article tribute
+/// - Retired players are removed from `game.players` entirely
+pub fn process_retirements(game: &mut Game, date: &str) {
+    let current_year = game.clock.current_date.format("%Y").to_string().parse().unwrap_or(2026);
+    let mut rng = rand::rng();
+
+    // Collect retiree indices in reverse order so removals don't shift indexes
+    let retiree_info: Vec<(usize, String, String, f64, Option<String>)> = game
+        .players
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, player)| {
+            let age = estimate_age(&player.date_of_birth, current_year);
+            if age <= 35 {
+                return None;
+            }
+
+            let roll = rng.random_range(0.0..1.0f64);
+            let probability = if age >= 39 {
+                1.0 // forced
+            } else {
+                (age as f64 - 35.0) * 0.25
+            };
+
+            if roll < probability {
+                let overall = calculate_overall(&player.attributes);
+                Some((idx, player.id.clone(), player.match_name.clone(), overall, player.team_id.clone()))
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    if retiree_info.is_empty() {
+        return;
+    }
+
+    // Generate news articles for high-reputation retirements
+    for (_, player_id, player_name, overall, team_id) in &retiree_info {
+        // A player is considered "high reputation" if their overall > 70
+        if *overall > 70.0 {
+            let team_name = team_id.as_ref()
+                .and_then(|tid| game.teams.iter().find(|t| &t.id == tid))
+                .map(|t| t.name.as_str())
+                .unwrap_or("Unknown");
+
+            let mut article = NewsArticle::new(
+                format!("retirement_{}", player_id),
+                format!("{} Announces Retirement", player_name),
+                format!(
+                    "After a distinguished career, {} has announced their retirement from professional football.\n\n\
+                     The {} star leaves the game with a legacy of quality performances and will be remembered \
+                     as one of the notable players of their generation.",
+                    player_name, team_name
+                ),
+                "League Office".to_string(),
+                date.to_string(),
+                NewsCategory::Editorial,
+            );
+            article.player_ids.push(player_id.clone());
+            if let Some(tid) = team_id {
+                article.team_ids.push(tid.clone());
+            }
+
+            game.news.push(article);
+        }
+    }
+
+    // Remove retired players from team references and from game.players
+    // Process in reverse index order to avoid shifting issues
+    for (idx, player_id, player_name, overall, team_id) in retiree_info.iter().rev() {
+        log::info!(
+            "[retirement] {} (overall={:.1}) has retired",
+            player_name, overall
+        );
+
+        // Clean up team references
+        if let Some(tid) = team_id {
+            if let Some(team) = game.teams.iter_mut().find(|t| &t.id == tid) {
+                crate::contracts::remove_player_from_team_references(team, player_id);
+            }
+        }
+
+        game.players.remove(*idx);
     }
 }
 
@@ -476,6 +568,9 @@ pub fn process_end_of_season(game: &mut Game) -> EndOfSeasonSummary {
 
     // 6c. Clear old news articles from the previous season
     game.news.clear();
+
+    // 6d. Process retirements (after news clear so retirement articles survive)
+    process_retirements(game, &last_fixture_date);
 
     // 7. Generate next season schedule
     let next_season = season + 1;

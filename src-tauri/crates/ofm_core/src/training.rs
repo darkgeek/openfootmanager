@@ -448,8 +448,8 @@ pub fn ai_manage_team_condition(game: &mut Game) {
             }
         }
 
-        // If condition is very low (<50), switch to Recovery
-        if avg_condition < 50.0 {
+        // If condition is very low (<20), switch to Recovery
+        if avg_condition < 20.0 {
             if team.training_focus != TrainingFocus::Recovery {
                 // Remember current focus before switching
                 team.preferred_training_focus = team.training_focus.clone();

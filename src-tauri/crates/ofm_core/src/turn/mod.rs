@@ -71,9 +71,9 @@ where
         training::check_squad_fitness_warnings(game);
     }
 
-    crate::contracts::process_contract_expiries(game);
-
     // AI team management: transfers and squad replenishment
+    // Run BEFORE contract expiry to avoid released players being immediately
+    // re-signed by another AI team on the same day.
     if ai_team_management::transfer_window_is_open(game) {
         // During transfer window: AI teams can buy players
         ai_team_management::ai_transfer_activity(game);
@@ -81,6 +81,8 @@ where
         // Outside transfer window: replenish squads with youth players
         ai_team_management::ai_replenish_squad_offseason(game);
     }
+
+    crate::contracts::process_contract_expiries(game);
 
     // Weekly financial processing (wages, matchday income, warnings)
     crate::finances::process_weekly_finances(game);
@@ -129,14 +131,16 @@ pub fn finish_live_match_day(game: &mut Game) {
     info!("[turn] finish_live_match_day: {}", today);
     generate_matchday_news(game, &today);
 
-    crate::contracts::process_contract_expiries(game);
-
     // AI team management: transfers and squad replenishment
+    // Run BEFORE contract expiry to avoid released players being immediately
+    // re-signed by another AI team on the same day.
     if ai_team_management::transfer_window_is_open(game) {
         ai_team_management::ai_transfer_activity(game);
     } else {
         ai_team_management::ai_replenish_squad_offseason(game);
     }
+
+    crate::contracts::process_contract_expiries(game);
 
     board_objectives::generate_objectives(game);
     board_objectives::update_objective_progress(game);
