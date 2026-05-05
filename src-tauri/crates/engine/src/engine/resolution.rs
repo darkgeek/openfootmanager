@@ -1,7 +1,7 @@
 use rand::{Rng, RngExt};
 
 use crate::event::{ApplauseReason, EventType, MatchEvent};
-use crate::shared::{PlayStylePhase, TraitContext, home_mod, play_style_modifier, trait_bonus};
+use crate::shared::{PlayStylePhase, PlayerSnap, TraitContext, home_mod, play_style_modifier, trait_bonus};
 use crate::types::{Position, Side, Zone};
 
 use super::MatchContext;
@@ -338,9 +338,23 @@ fn resolve_attacking_third<R: Rng>(
     }
 }
 
+/// Pick a shooter with weighted position probability:
+/// 85% Forward, 10% Midfielder, 5% Defender.
+fn snap_shooter<R: Rng>(ctx: &MatchContext, side: Side, rng: &mut R) -> PlayerSnap {
+    let roll: f64 = rng.random_range(0.0..1.0f64);
+    let preferred = if roll < 0.85 {
+        Position::Forward
+    } else if roll < 0.95 {
+        Position::Midfielder
+    } else {
+        Position::Defender
+    };
+    snap_player(ctx, side, preferred, rng)
+}
+
 fn resolve_shot<R: Rng>(ctx: &mut MatchContext, minute: u8, att_side: Side, rng: &mut R) {
     let def_side = att_side.opposite();
-    let shooter = snap_player(ctx, att_side, Position::Forward, rng);
+    let shooter = snap_shooter(ctx, att_side, rng);
     let assister = snap_player(ctx, att_side, Position::Midfielder, rng);
     let goalkeeper = snap_player(ctx, def_side, Position::Goalkeeper, rng);
     let zone = Zone::attacking_box(att_side);
