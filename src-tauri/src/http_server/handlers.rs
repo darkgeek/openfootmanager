@@ -1255,6 +1255,7 @@ pub async fn set_training(State(state): State<AppState>, Json(params): Json<Valu
         "Tactical" => domain::team::TrainingFocus::Tactical,
         "Defending" => domain::team::TrainingFocus::Defending,
         "Attacking" => domain::team::TrainingFocus::Attacking,
+        "Goalkeeping" => domain::team::TrainingFocus::Goalkeeping,
         "Recovery" => domain::team::TrainingFocus::Recovery,
         _ => return Err("Invalid training focus".to_string()),
     };
@@ -1333,6 +1334,7 @@ pub async fn set_training_groups(State(state): State<AppState>, Json(params): Js
                     "Tactical" => domain::team::TrainingFocus::Tactical,
                     "Defending" => domain::team::TrainingFocus::Defending,
                     "Attacking" => domain::team::TrainingFocus::Attacking,
+                    "Goalkeeping" => domain::team::TrainingFocus::Goalkeeping,
                     "Recovery" => domain::team::TrainingFocus::Recovery,
                     _ => domain::team::TrainingFocus::Technical,
                 };

@@ -571,6 +571,10 @@
         "label": "Attacking",
         "desc": "Increase goal threat"
       },
+      "Goalkeeping": {
+        "label": "Goalkeeping",
+        "desc": "Develop goalkeeper skills"
+      },
       "Recovery": {
         "label": "Recovery",
         "desc": "Rest day — max recovery"

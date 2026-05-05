@@ -189,6 +189,7 @@ pub fn set_training(
         "Tactical" => domain::team::TrainingFocus::Tactical,
         "Defending" => domain::team::TrainingFocus::Defending,
         "Attacking" => domain::team::TrainingFocus::Attacking,
+        "Goalkeeping" => domain::team::TrainingFocus::Goalkeeping,
         "Recovery" => domain::team::TrainingFocus::Recovery,
         _ => domain::team::TrainingFocus::Physical,
     };
@@ -284,6 +285,7 @@ pub fn set_player_training_focus(
         "Tactical" => Some(domain::team::TrainingFocus::Tactical),
         "Defending" => Some(domain::team::TrainingFocus::Defending),
         "Attacking" => Some(domain::team::TrainingFocus::Attacking),
+        "Goalkeeping" => Some(domain::team::TrainingFocus::Goalkeeping),
         "Recovery" => Some(domain::team::TrainingFocus::Recovery),
         _ => None,
     });
