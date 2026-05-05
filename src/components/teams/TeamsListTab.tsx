@@ -24,17 +24,20 @@ export default function TeamsListTab({ gameState, onSelectTeam }: TeamsListTabPr
     const avgOvr = roster.length > 0
       ? Math.round(roster.reduce((s, p) => s + calcPlayerOvr(p), 0) / roster.length)
       : 0;
+    const avgCondition = roster.length > 0
+      ? Math.round(roster.reduce((s, p) => s + p.condition, 0) / roster.length)
+      : 0;
     const totalValue = roster.reduce((s, p) => s + p.market_value, 0);
     const leaguePos = allStandings.findIndex(s => s.team_id === team.id) + 1;
     const standing = allStandings.find(s => s.team_id === team.id);
 
-    return { team, roster, avgOvr, totalValue, leaguePos, standing };
+    return { team, roster, avgOvr, avgCondition, totalValue, leaguePos, standing };
   }).sort((a, b) => a.leaguePos - b.leaguePos);
 
   return (
     <div className="max-w-6xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {teamsData.map(({ team, roster, avgOvr, totalValue, leaguePos, standing }) => {
+        {teamsData.map(({ team, roster, avgOvr, avgCondition, totalValue, leaguePos, standing }) => {
           const isUser = team.id === userTeamId;
           return (
             <Card
@@ -79,8 +82,9 @@ export default function TeamsListTab({ gameState, onSelectTeam }: TeamsListTabPr
                 </div>
 
                 {/* Stats row */}
-                <div className="grid grid-cols-5 gap-px bg-gray-200 dark:bg-navy-600">
+                <div className="grid grid-cols-6 gap-px bg-gray-200 dark:bg-navy-600">
                   <StatCell label={t('teams.squad')} value={String(roster.length)} />
+                  <StatCell label={t('teams.avgCondition')} value={String(avgCondition)} />
                   <StatCell label={t('teams.avgOvr')} value={String(avgOvr)} />
                   <StatCell label={t('teams.rep')} value={String(team.reputation)} />
                   <StatCell label={t('common.value')} value={formatVal(totalValue)} />
