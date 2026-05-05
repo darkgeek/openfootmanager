@@ -117,6 +117,7 @@ fn parse_training_focus(s: &str) -> Option<TrainingFocus> {
         "Tactical" => Some(TrainingFocus::Tactical),
         "Defending" => Some(TrainingFocus::Defending),
         "Attacking" => Some(TrainingFocus::Attacking),
+        "Goalkeeping" => Some(TrainingFocus::Goalkeeping),
         "Recovery" => Some(TrainingFocus::Recovery),
         _ => None,
     }

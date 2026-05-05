@@ -84,6 +84,7 @@ pub enum TrainingFocus {
     Tactical,
     Defending,
     Attacking,
+    Goalkeeping,
     Recovery,
 }
 

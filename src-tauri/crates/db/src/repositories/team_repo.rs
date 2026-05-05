@@ -98,6 +98,7 @@ fn parse_training_focus(s: &str) -> TrainingFocus {
         "Tactical" => TrainingFocus::Tactical,
         "Defending" => TrainingFocus::Defending,
         "Attacking" => TrainingFocus::Attacking,
+        "Goalkeeping" => TrainingFocus::Goalkeeping,
         "Recovery" => TrainingFocus::Recovery,
         _ => TrainingFocus::Physical,
     }

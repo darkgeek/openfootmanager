@@ -273,6 +273,7 @@ pub fn randomize_ai_training_focuses(game: &mut Game, user_team_id: &str) {
         TrainingFocus::Tactical,
         TrainingFocus::Defending,
         TrainingFocus::Attacking,
+        TrainingFocus::Goalkeeping,
     ];
     
     let mut rng = rand::rng();
