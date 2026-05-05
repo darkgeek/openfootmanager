@@ -55,6 +55,9 @@ where
     log::info!("[turn] process_day {}: transfer_window_open={}, phase={}, tw_status={}, listed_before={}",
         today, transfer_window_open, season_phase, tw_status, listed_before);
 
+    // Clean up old inbox messages before processing the new day
+    crate::messages::cleanup_old_messages(game);
+
     let has_match_today = game.league.as_ref().is_some_and(|league| {
         league
             .fixtures
@@ -131,6 +134,8 @@ where
 pub fn finish_live_match_day(game: &mut Game) {
     let today = game.clock.current_date.format("%Y-%m-%d").to_string();
     info!("[turn] finish_live_match_day: {}", today);
+    // Clean up old inbox messages
+    crate::messages::cleanup_old_messages(game);
     generate_matchday_news(game, &today);
 
     // AI team management: transfers and squad replenishment

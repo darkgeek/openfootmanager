@@ -252,6 +252,7 @@ fn row_to_player(row: &rusqlite::Row) -> rusqlite::Result<Player> {
         morale_core: serde_json::from_str(&morale_core_json).unwrap_or_default(),
         suspension_games_remaining,
         accumulated_yellow_cards,
+        free_agent_since: None,
     })
 }
 
