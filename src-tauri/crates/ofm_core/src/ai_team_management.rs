@@ -131,7 +131,9 @@ fn sign_youth_player(game: &mut Game, team_id: &str, position: Position) -> Opti
             attrs,
         );
         new_player.team_id = Some(team_id.to_string());
-        new_player.contract_end = Some(format!("{}-06-30", game.clock.current_date.format("%Y")));
+        let years: u32 = rng.random_range(1..=2);
+        let contract_year: u32 = game.clock.current_date.format("%Y").to_string().parse().unwrap_or(2026) + years;
+        new_player.contract_end = Some(format!("{}-06-30", contract_year));
         new_player.market_value = (base_ovr as u64 * 100_000);
         new_player.wage = (base_ovr as u32 * 1000);
         
@@ -143,7 +145,9 @@ fn sign_youth_player(game: &mut Game, team_id: &str, position: Position) -> Opti
     let player_id = available[0].id.clone();
     if let Some(player) = game.players.iter_mut().find(|p| p.id == player_id) {
         player.team_id = Some(team_id.to_string());
-        player.contract_end = Some(format!("{}-06-30", game.clock.current_date.format("%Y")));
+        let years: u32 = rand::rng().random_range(1..=2);
+        let contract_year: u32 = game.clock.current_date.format("%Y").to_string().parse().unwrap_or(2026) + years;
+        player.contract_end = Some(format!("{}-06-30", contract_year));
         info!("[AI Team] {} signed free agent {}", team_name, player.match_name);
     }
     
