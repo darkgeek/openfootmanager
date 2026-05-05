@@ -115,6 +115,7 @@ pub(super) fn country_to_iso(country: &str) -> &str {
         "Belgium" | "BE" => "BE",
         "Croatia" | "HR" => "HR",
         "Sweden" | "SE" => "SE",
+        "China" | "CN" => "CN",
         other => {
             // If already a short code, return as-is.
             if other.len() == 2 || other.len() == 3 {
