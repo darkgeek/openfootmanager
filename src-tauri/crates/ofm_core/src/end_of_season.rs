@@ -507,8 +507,7 @@ pub fn process_end_of_season(game: &mut Game) -> EndOfSeasonSummary {
     // Clean up long-term free agents
     crate::contracts::cleanup_long_term_free_agents(game);
 
-    // 5c. Replenish AI team squads for new season
-    crate::ai_team_management::ai_end_of_season_replenishment(game);
+    // 5c. (Replenishment moved after retirements, see step 6e)
 
     // 6. Update manager career stats
     if let Some(standing) = &user_standing {
@@ -576,6 +575,9 @@ pub fn process_end_of_season(game: &mut Game) -> EndOfSeasonSummary {
 
     // 6d. Process retirements (after news clear so retirement articles survive)
     process_retirements(game, &last_fixture_date);
+
+    // 6e. Replenish AI team squads for new season (after retirements, so gaps are filled)
+    crate::ai_team_management::ai_end_of_season_replenishment(game);
 
     // 7. Generate next season schedule
     let next_season = season + 1;
