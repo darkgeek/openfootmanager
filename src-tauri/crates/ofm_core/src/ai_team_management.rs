@@ -100,11 +100,15 @@ fn sign_youth_player(game: &mut Game, team_id: &str, position: Position) -> Opti
         
         let full_name = generate_random_name();
         
+        let birth_year = game.clock.current_date.format("%Y").to_string().parse::<u32>().unwrap_or(2026);
+        let age = rng.random_range(15..=18);
+        let birth_date = format!("{}-01-01", birth_year - age);
+
         let mut new_player = Player::new(
             player_id.clone(),
             full_name.clone(),
             full_name,
-            "2002-01-01".to_string(),
+            birth_date,
             team.country.clone(),
             position.clone(),
             attrs,
