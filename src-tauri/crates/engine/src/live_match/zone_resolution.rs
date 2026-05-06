@@ -520,6 +520,11 @@ impl LiveMatchState {
                 MatchEvent::new(minute, EventType::Injury, att_side, zone).with_player(&fouled.id);
             self.events.push(evt.clone());
             events.push(evt);
+
+            // Apply a 15% penalty to the injured player's match condition
+            if let Some(cond) = self.player_conditions.get_mut(&fouled.id) {
+                *cond = (*cond - 15.0).max(5.0);
+            }
         }
 
         events
