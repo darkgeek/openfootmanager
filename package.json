@@ -4,15 +4,16 @@
   "version": "0.2.0",
   "type": "module",
   "scripts": {
-    "audit:i18n": "node scripts/audit-i18n.mjs",
     "dev": "vite",
     "dev:web": "vite --mode web",
     "build": "tsc && vite build",
-    "build:web": "tsc && vite build --mode web",
+    "build:web": "vite build --mode web",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "server": "cd src-tauri && cargo run --features web -- --web --port 3001",
+    "server:debug": "cd src-tauri && RUST_LOG=debug cargo run --features web -- --web --port 3001"
   },
   "dependencies": {
     "@fontsource/barlow-condensed": "^5.2.8",
@@ -31,18 +32,19 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.2.2",
-    "@tauri-apps/cli": "^2",
+    "@tauri-apps/cli": "^2.10.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^4.7.0",
     "@vitest/coverage-v8": "^4.1.2",
+    "autoprefixer": "^10.5.0",
     "jsdom": "^29.0.1",
-    "tailwindcss": "^4.2.2",
+    "postcss": "^8.5.10",
+    "tailwindcss": "^3.4.19",
     "typescript": "~6.0.2",
-    "vite": "^8.0.5",
+    "vite": "^6.4.2",
     "vitest": "^4.1.2"
   }
 }

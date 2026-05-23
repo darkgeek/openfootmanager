@@ -1,6 +1,5 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 // @ts-expect-error process is a nodejs global
@@ -81,7 +80,7 @@ export default defineConfig(async ({ mode }) => {
   const isWebMode = mode === 'web';
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react()],
     test: {
       environment: "jsdom",
       globals: true,
