@@ -615,7 +615,11 @@
         "label": "Angriff",
         "desc": "Offensivkraft steigern"
       },
-      "Recovery": {
+      "Goalkeeping": {
+          "label": "Goalkeeping",
+          "desc": "Develop goalkeeper skills"
+        },
+        "Recovery": {
         "label": "Erholung",
         "desc": "Ruhetag — maximale Erholung"
       }

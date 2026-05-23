@@ -1,5 +1,6 @@
 use crate::game::Game;
 use crate::messages;
+use crate::suspensions;
 use domain::league::{
     CompactMatchEvent, CompactMatchReport, CompactTeamMatchStats, FixtureStatus, GoalEvent,
     MatchResult,
@@ -155,6 +156,10 @@ pub fn apply_match_report_with_capture<F>(
 
     // Update player season stats from the engine report
     apply_player_stats(game, report, home_team_id, away_team_id);
+    
+    // Apply suspensions (red cards and accumulated yellows)
+    apply_suspensions_after_match(game, report, home_team_id, away_team_id, !counts_for_standings);
+    
     resolve_post_match_promises(game, report, home_team_id, away_team_id);
 
     // Deplete stamina for players who played, scaled by minutes on pitch
@@ -441,6 +446,66 @@ fn apply_player_stats(
                 if conceded_zero {
                     player.stats.clean_sheets += 1;
                 }
+            }
+        }
+    }
+}
+
+/// Apply suspensions after a league match.
+/// Red card = 1 match ban
+/// 3 accumulated yellow cards = 1 match ban
+/// Friendly matches don't count.
+fn apply_suspensions_after_match(
+    game: &mut Game,
+    report: &engine::MatchReport,
+    home_team_id: &str,
+    away_team_id: &str,
+    is_friendly: bool,
+) {
+    if is_friendly {
+        return;
+    }
+
+    for player in game.players.iter_mut() {
+        let Some(team_id) = player.team_id.clone() else {
+            continue;
+        };
+
+        // Find player's team in match
+        let is_home_player = team_id == home_team_id;
+        let is_away_player = team_id == away_team_id;
+        if !is_home_player && !is_away_player {
+            continue;
+        }
+
+        // Get this match's yellow/red cards from player_stats
+        let ps = report.player_stats.get(&player.id);
+        let yellows_in_match = ps.map(|s| s.yellow_cards).unwrap_or(0);
+        let reds_in_match = ps.map(|s| s.red_cards).unwrap_or(0);
+
+        // Apply red card suspension
+        if reds_in_match > 0 {
+            player.suspension_games_remaining += 1;
+            log::info!(
+                "[suspension] {} (team {}) gets 1-match ban for red card",
+                player.match_name,
+                team_id
+            );
+        }
+
+        // Accumulate and check yellow cards
+        if yellows_in_match > 0 {
+            player.accumulated_yellow_cards += yellows_in_match;
+
+            // Check if this triggers a suspension
+            while player.accumulated_yellow_cards >= 3 {
+                player.accumulated_yellow_cards -= 3;
+                player.suspension_games_remaining += 1;
+                log::info!(
+                    "[suspension] {} (team {}) suspended for accumulated yellow cards",
+                    player.match_name,
+                    team_id
+                );
             }
         }
     }

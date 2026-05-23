@@ -27,6 +27,7 @@ pub mod reputation;
 pub mod schedule;
 pub mod scouting;
 pub mod season_awards;
+pub mod suspensions;
 pub mod season_context;
 pub mod squad_safety;
 pub mod state;

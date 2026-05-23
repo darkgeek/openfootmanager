@@ -81,6 +81,13 @@ where
     crate::ai_team_management::ai_transfer_activity(game);
     crate::ai_hiring::update_ai_manager_satisfaction(game);
 
+    // Process suspension reductions (decrement after each day passes)
+    for player in game.players.iter_mut() {
+        if player.suspension_games_remaining > 0 {
+            player.suspension_games_remaining -= 1;
+        }
+    }
+
     news::generate_weekly_digest_news(game, &today);
     news::generate_pre_match_messages(game, &today);
 

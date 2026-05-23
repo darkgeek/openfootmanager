@@ -219,6 +219,32 @@ fn planned_contract_exit_crisis_blocker(game: &Game) -> Option<serde_json::Value
     })
 }
 
+fn suspended_players_blocker(roster: &[&domain::player::Player]) -> Option<serde_json::Value> {
+    let suspended: Vec<_> = roster
+        .iter()
+        .filter(|p| p.suspension_games_remaining > 0)
+        .map(|p| (p.match_name.clone(), p.suspension_games_remaining))
+        .collect();
+
+    if suspended.is_empty() {
+        return None;
+    }
+
+    let msg = suspended
+        .iter()
+        .map(|(name, games)| format!("{} ({} game(s))", name, games))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    Some(build_blocker(
+        "suspended_players",
+        "info",
+        "Squad",
+        None,
+        Some(serde_json::json!({"msg": msg})),
+    ))
+}
+
 fn urgent_unread_messages_blocker(game: &Game) -> Option<serde_json::Value> {
     let urgent_unread = game
         .messages
@@ -342,6 +368,10 @@ pub fn compute_blocking_actions(game: &Game) -> Vec<serde_json::Value> {
     }
 
     if let Some(blocker) = planned_contract_exit_crisis_blocker(game) {
+        blockers.push(blocker);
+    }
+
+    if let Some(blocker) = suspended_players_blocker(&roster) {
         blockers.push(blocker);
     }
 

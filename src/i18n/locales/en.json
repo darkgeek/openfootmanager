@@ -422,7 +422,8 @@
       "Tactical": "Tactical",
       "Defending": "Defending",
       "Attacking": "Attacking",
-      "Recovery": "Recovery",
+      "Goalkeeping": "Goalkeeping",
+        "Recovery": "Recovery",
       "General": "General"
     },
     "attributes": {
@@ -615,7 +616,11 @@
         "label": "Attacking",
         "desc": "Increase goal threat"
       },
-      "Recovery": {
+      "Goalkeeping": {
+          "label": "Goalkeeping",
+          "desc": "Develop goalkeeper skills"
+        },
+        "Recovery": {
         "label": "Recovery",
         "desc": "Rest day — max recovery"
       }

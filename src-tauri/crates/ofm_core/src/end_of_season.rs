@@ -261,6 +261,9 @@ pub fn process_end_of_season(game: &mut Game) -> EndOfSeasonSummary {
     for player in game.players.iter_mut() {
         // Reset stats for next season
         player.stats = PlayerSeasonStats::default();
+        // Reset suspensions and accumulated yellow cards for new season
+        player.suspension_games_remaining = 0;
+        player.accumulated_yellow_cards = 0;
     }
 
     // 6. Update manager career stats
