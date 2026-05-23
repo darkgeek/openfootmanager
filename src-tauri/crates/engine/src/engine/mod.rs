@@ -139,11 +139,29 @@ impl<'a> MatchContext<'a> {
         }
     }
 
+    pub(crate) fn home_score(&self) -> u8 {
+        self.home_score
+    }
+
+    pub(crate) fn away_score(&self) -> u8 {
+        self.away_score
+    }
+
     pub(crate) fn add_goal(&mut self, side: Side) {
         match side {
             Side::Home => self.home_score += 1,
             Side::Away => self.away_score += 1,
         }
+    }
+
+    /// Get the most recent events (for atmosphere generation)
+    pub(crate) fn recent_events(&self, count: usize) -> Vec<MatchEvent> {
+        let start = if self.events.len() > count {
+            self.events.len() - count
+        } else {
+            0
+        };
+        self.events[start..].to_vec()
     }
 }
 

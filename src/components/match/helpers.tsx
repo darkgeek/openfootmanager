@@ -18,6 +18,17 @@ import {
   AlertTriangle,
   Zap,
   CircleDot,
+  Target,
+  Sparkles,
+  Star,
+  ThumbsUp,
+  Volume2,
+  VolumeX,
+  Megaphone,
+  Frown,
+  Save,
+  HandMetal,
+  FlagOff,
 } from "lucide-react";
 
 export const EVENT_ICONS: Record<
@@ -118,6 +129,105 @@ export const EVENT_ICONS: Record<
     icon: <Zap className="w-4 h-4" />,
     color: "text-accent-700 dark:text-accent-400",
     important: true,
+  },
+  GreatChance: {
+    icon: <Target className="w-4 h-4" />,
+    color: "text-accent-700 dark:text-accent-400",
+    important: true,
+  },
+  CloseCall: {
+    icon: <ArrowUpRight className="w-4 h-4" />,
+    color: "text-yellow-500",
+    important: true,
+  },
+  GreatSave: {
+    icon: <Save className="w-4 h-4" />,
+    color: "text-green-700 dark:text-green-400",
+    important: true,
+  },
+  Celebration: {
+    icon: <Sparkles className="w-4 h-4" />,
+    color: "text-accent-700 dark:text-accent-400",
+    important: true,
+  },
+  Tension: {
+    icon: <AlertTriangle className="w-4 h-4" />,
+    color: "text-yellow-500",
+    important: true,
+  },
+  Diving: {
+    icon: <AlertTriangle className="w-4 h-4" />,
+    color: "text-red-400",
+    important: true,
+  },
+  // Shooting events
+  ShotOnTarget: {
+    icon: <Target className="w-4 h-4" />,
+    color: "text-yellow-500",
+    important: false,
+  },
+  // Atmosphere events
+  Applause: {
+    icon: <ThumbsUp className="w-4 h-4" />,
+    color: "text-green-700 dark:text-green-400",
+    important: false,
+  },
+  Chants: {
+    icon: <Megaphone className="w-4 h-4" />,
+    color: "text-blue-400",
+    important: false,
+  },
+  Groans: {
+    icon: <Frown className="w-4 h-4" />,
+    color: "text-gray-500",
+    important: false,
+  },
+  Atmosphere: {
+    icon: <Volume2 className="w-4 h-4" />,
+    color: "text-gray-500",
+    important: false,
+  },
+  // Other events
+  GoalkeeperPunch: {
+    icon: <HandMetal className="w-4 h-4" />,
+    color: "text-gray-700 dark:text-gray-500",
+    important: false,
+  },
+  GoalkeeperCatch: {
+    icon: <Hand className="w-4 h-4" />,
+    color: "text-gray-700 dark:text-gray-500",
+    important: false,
+  },
+  Offside: {
+    icon: <FlagOff className="w-4 h-4" />,
+    color: "text-gray-700 dark:text-gray-500",
+    important: false,
+  },
+  // Attacking events
+  Dribble: {
+    icon: <ArrowLeftRight className="w-4 h-4" />,
+    color: "text-blue-400",
+    important: false,
+  },
+  PassCompleted: {
+    icon: <ArrowLeftRight className="w-3.5 h-3.5" />,
+    color: "text-gray-700 dark:text-gray-500",
+    important: false,
+  },
+  Tackle: {
+    icon: <Shield className="w-4 h-4" />,
+    color: "text-green-700 dark:text-green-400",
+    important: false,
+  },
+  Interception: {
+    icon: <Hand className="w-4 h-4" />,
+    color: "text-green-700 dark:text-green-400",
+    important: false,
+  },
+  Clearance: {
+    icon: <Shield className="w-4 h-4" />,
+    color: "text-gray-700 dark:text-gray-500",
+    important: false,
   },
 };
 
