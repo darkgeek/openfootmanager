@@ -269,13 +269,41 @@ fn resolve_shot<R: Rng>(ctx: &mut MatchContext, minute: u8, att_side: Side, rng:
     let conversion =
         (ctx.config.goal_conversion_base + (shoot_rating - gk_rating) / 150.0).clamp(0.10, 0.70);
 
+<<<<<<< HEAD
     if rng.random_range(0.0..1.0f64) < conversion {
+=======
+    // Great chance - high quality shot setup
+    if shoot_rating > 80.0 && goal_roll < conversion * 1.2 {
+        let mut evt = MatchEvent::new(minute, EventType::GreatChance, att_side, zone)
+            .with_player(&shooter.id);
+        if has_assist {
+            evt = evt.with_secondary(&assister.id);
+        }
+        ctx.emit(evt);
+    } else {
+        // Regular on-target shot
+        ctx.emit(
+            MatchEvent::new(minute, EventType::ShotOnTarget, att_side, zone)
+                .with_player(&shooter.id),
+        );
+    }
+
+    // Goal or saved
+    if goal_roll < conversion {
+>>>>>>> 2ecc2a7 (fix: prevent shooter from being their own assister)
         let mut goal_evt = MatchEvent::new(minute, EventType::Goal, att_side, zone)
             .with_player(&shooter.id);
         if has_assist {
             goal_evt = goal_evt.with_secondary(&assister.id);
         }
         ctx.emit(goal_evt);
+<<<<<<< HEAD
+=======
+        ctx.emit(
+            MatchEvent::new(minute, EventType::Celebration, att_side, zone)
+                .with_player(&shooter.id),
+        );
+>>>>>>> 2ecc2a7 (fix: prevent shooter from being their own assister)
         ctx.add_goal(att_side);
     } else {
         ctx.emit(
