@@ -1690,8 +1690,8 @@ pub async fn start_live_match(State(state): State<AppState>, Json(params): Json<
         state.state_manager.set_game(game);
     }
     
-    // Return the snapshot directly (engine types are already Serialize)
-    Ok(Json(to_camel_json(&snapshot)?))
+    // Return the snapshot with snake_case keys (frontend MatchSnapshot type expects snake_case)
+    Ok(Json(serde_json::to_value(&snapshot).map_err(|e| e.to_string())?))
 }
 
 pub async fn get_player_match_history(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Vec<Value>>, String> {
