@@ -1,7 +1,7 @@
 use crate::game::Game;
 use crate::player_rating::{effective_rating_for_assignment, formation_slots, natural_ovr};
 use domain::player::Position as DomainPosition;
-use engine::{PlayStyle, PlayerData, Position, TeamData};
+use engine::{PlayStyle, PlayerData, Position as EnginePosition, TeamData};
 
 // ---------------------------------------------------------------------------
 // Domain → Engine conversion with starting XI / bench split
@@ -9,7 +9,7 @@ use engine::{PlayStyle, PlayerData, Position, TeamData};
 
 pub(super) fn build_team_with_bench(game: &Game, team_id: &str) -> (TeamData, Vec<PlayerData>) {
     let team = game.teams.iter().find(|t| t.id == team_id);
-    let (name, formation, play_style) = match team {
+    let (name, formation, play_style, saved_xi_ids) = match team {
         Some(t) => (
             t.name.clone(),
             t.formation.clone(),
@@ -21,37 +21,93 @@ pub(super) fn build_team_with_bench(game: &Game, team_id: &str) -> (TeamData, Ve
                 domain::team::PlayStyle::HighPress => PlayStyle::HighPress,
                 _ => PlayStyle::Balanced,
             },
+            t.starting_xi_ids.clone(),
         ),
-        None => ("Unknown".into(), "4-4-2".into(), PlayStyle::Balanced),
+        None => ("Unknown".into(), "4-4-2".into(), PlayStyle::Balanced, vec![]),
     };
 
-    // Collect all available (non-injured) players for this team
+    // Collect all available (non-injured) players for this team,
+    // also excluding suspended players.
     let available_players: Vec<&domain::player::Player> = game
         .players
         .iter()
-        .filter(|p| p.team_id.as_deref() == Some(team_id) && p.injury.is_none())
+        .filter(|p| {
+            p.team_id.as_deref() == Some(team_id)
+                && p.injury.is_none()
+                && p.suspension_games_remaining == 0
+        })
         .collect();
-    let slots = formation_slots(&formation);
+
     let mut used_ids = std::collections::HashSet::new();
     let mut starting_xi = Vec::with_capacity(11);
 
-    for slot in slots.iter().take(11) {
-        let best_player = available_players
-            .iter()
-            .copied()
-            .filter(|player| !used_ids.contains(&player.id))
-            .max_by(|left, right| {
-                effective_rating_for_assignment(left, slot)
-                    .partial_cmp(&effective_rating_for_assignment(right, slot))
-                    .unwrap_or(std::cmp::Ordering::Equal)
+    // If the user has a saved starting XI (>= 8 players), respect it.
+    // This preserves lineup choices made in the Tactics screen.
+    // Auto-fill only slots where the saved player is injured/invalid.
+    if saved_xi_ids.len() >= 8 {
+        let slots = formation_slots(&formation);
+        for (slot_idx, slot) in slots.iter().enumerate().take(11) {
+            // Try saved player for this slot index first
+            let player_opt: Option<&domain::player::Player> = saved_xi_ids
+                .get(slot_idx)
+                .and_then(|id| {
+                    available_players
+                        .iter()
+                        .find(|p| p.id.as_str() == id.as_str() && !used_ids.contains(&p.id))
+                })
+                .copied();
+
+            // Fall back to any other saved player not yet used
+            let player_opt = player_opt.or_else(|| {
+                saved_xi_ids
+                    .iter()
+                    .find_map(|id| {
+                        available_players
+                            .iter()
+                            .find(|p| p.id.as_str() == id.as_str() && !used_ids.contains(&p.id))
+                    })
+                    .copied()
             });
 
-        let Some(player) = best_player else {
-            break;
-        };
+            // Final fallback: best available for this slot
+            let player_opt = player_opt.or_else(|| {
+                available_players
+                    .iter()
+                    .copied()
+                    .filter(|player| !used_ids.contains(&player.id))
+                    .max_by(|left, right| {
+                        effective_rating_for_assignment(left, slot)
+                            .partial_cmp(&effective_rating_for_assignment(right, slot))
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    })
+            });
 
-        used_ids.insert(player.id.clone());
-        starting_xi.push(to_engine_player(player));
+            if let Some(player) = player_opt {
+                used_ids.insert(player.id.clone());
+                starting_xi.push(to_engine_player(player));
+            }
+        }
+    } else {
+        // No saved lineup: auto-select best 11 by rating
+        let slots = formation_slots(&formation);
+        for slot in slots.iter().take(11) {
+            let best_player = available_players
+                .iter()
+                .copied()
+                .filter(|player| !used_ids.contains(&player.id))
+                .max_by(|left, right| {
+                    effective_rating_for_assignment(left, slot)
+                        .partial_cmp(&effective_rating_for_assignment(right, slot))
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                });
+
+            let Some(player) = best_player else {
+                break;
+            };
+
+            used_ids.insert(player.id.clone());
+            starting_xi.push(to_engine_player(player));
+        }
     }
 
     let mut bench_domain: Vec<&domain::player::Player> = available_players
@@ -78,11 +134,11 @@ pub(super) fn build_team_with_bench(game: &Game, team_id: &str) -> (TeamData, Ve
 
 fn to_engine_player(p: &domain::player::Player) -> PlayerData {
     let pos = match p.position.to_group_position() {
-        DomainPosition::Goalkeeper => Position::Goalkeeper,
-        DomainPosition::Defender => Position::Defender,
-        DomainPosition::Midfielder => Position::Midfielder,
-        DomainPosition::Forward => Position::Forward,
-        _ => Position::Midfielder,
+        DomainPosition::Goalkeeper => EnginePosition::Goalkeeper,
+        DomainPosition::Defender => EnginePosition::Defender,
+        DomainPosition::Midfielder => EnginePosition::Midfielder,
+        DomainPosition::Forward => EnginePosition::Forward,
+        _ => EnginePosition::Midfielder,
     };
 
     PlayerData {
