@@ -43,7 +43,7 @@ fi
 # Start Frontend (WEB mode - port 5173, binds to all interfaces)
 echo -e "${YELLOW}Starting Frontend (port 5173)...${NC}"
 cd "$SCRIPT_DIR"
-npm run dev:web > /tmp/ofm_frontend.log 2>&1 &
+npm run dev:web -- --force > /tmp/ofm_frontend.log 2>&1 &
 FRONTEND_PID=$!
 sleep 4
 
