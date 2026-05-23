@@ -151,6 +151,9 @@ export default defineConfig(async ({ mode }) => {
         '@tauri-apps/api/core': isWebMode 
           ? path.resolve(__dirname, 'src/lib/api.ts')
           : '@tauri-apps/api/core',
+        '@tauri-apps/api/window': isWebMode 
+          ? path.resolve(__dirname, 'src/lib/window.ts')
+          : '@tauri-apps/api/window',
       },
     },
   };
