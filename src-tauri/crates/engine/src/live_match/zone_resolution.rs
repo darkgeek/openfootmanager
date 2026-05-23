@@ -1,6 +1,6 @@
 use rand::{Rng, RngExt};
 
-use crate::event::{EventType, MatchEvent};
+use crate::event::{ApplauseReason, EventType, MatchEvent};
 use crate::shared::{PlayStylePhase, PlayerSnap, TraitContext, play_style_modifier, trait_bonus};
 use crate::types::{Position, Side, Zone};
 
@@ -292,18 +292,11 @@ impl LiveMatchState {
             }
             self.events.push(goal_evt.clone());
             events.push(goal_evt);
-            self.add_goal(att_side);
-<<<<<<< HEAD
-        } else {
-            let evt = MatchEvent::new(minute, EventType::ShotSaved, att_side, zone)
-                .with_player(&shooter.id);
-            self.events.push(evt.clone());
-            events.push(evt);
-=======
             // Celebration!
             let celeb_evt = MatchEvent::new(minute, EventType::Celebration, att_side, Zone::Midfield);
             self.events.push(celeb_evt.clone());
             events.push(celeb_evt);
+            self.add_goal(att_side);
         } else {
             // Check for great save
             let gk_quality = (goalkeeper.reflexes as f64 + goalkeeper.handling as f64) / 2.0;
@@ -312,7 +305,6 @@ impl LiveMatchState {
                     .with_player(&goalkeeper.id);
                 self.events.push(great_save_evt.clone());
                 events.push(great_save_evt);
-                // Applause for the great save
                 let applause_evt = MatchEvent::new(minute, EventType::Applause, def_side, Zone::Midfield)
                     .with_player(&goalkeeper.id)
                     .with_applause_reason(ApplauseReason::GreatSave);
@@ -324,7 +316,6 @@ impl LiveMatchState {
                 self.events.push(evt.clone());
                 events.push(evt);
             }
->>>>>>> 2ecc2a7 (fix: prevent shooter from being their own assister)
         }
 
         self.ball_zone = Zone::Midfield;
