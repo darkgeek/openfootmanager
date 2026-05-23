@@ -228,7 +228,15 @@ fn snap_shooter<R: Rng>(ctx: &MatchContext, side: Side, rng: &mut R) -> PlayerSn
 fn resolve_shot<R: Rng>(ctx: &mut MatchContext, minute: u8, att_side: Side, rng: &mut R) {
     let def_side = att_side.opposite();
     let shooter = snap_shooter(ctx, att_side, rng);
-    let assister = snap_player(ctx, att_side, Position::Midfielder, rng);
+    // Pick assister; re-roll if it's the same player as the shooter
+    let mut assister = snap_player(ctx, att_side, Position::Midfielder, rng);
+    for _ in 0..3 {
+        if assister.id != shooter.id {
+            break;
+        }
+        assister = snap_player(ctx, att_side, Position::Midfielder, rng);
+    }
+    let has_assist = assister.id != shooter.id;
     let goalkeeper = snap_player(ctx, def_side, Position::Goalkeeper, rng);
 
     let shoot_rating =
@@ -262,11 +270,12 @@ fn resolve_shot<R: Rng>(ctx: &mut MatchContext, minute: u8, att_side: Side, rng:
         (ctx.config.goal_conversion_base + (shoot_rating - gk_rating) / 150.0).clamp(0.10, 0.70);
 
     if rng.random_range(0.0..1.0f64) < conversion {
-        ctx.emit(
-            MatchEvent::new(minute, EventType::Goal, att_side, zone)
-                .with_player(&shooter.id)
-                .with_secondary(&assister.id),
-        );
+        let mut goal_evt = MatchEvent::new(minute, EventType::Goal, att_side, zone)
+            .with_player(&shooter.id);
+        if has_assist {
+            goal_evt = goal_evt.with_secondary(&assister.id);
+        }
+        ctx.emit(goal_evt);
         ctx.add_goal(att_side);
     } else {
         ctx.emit(

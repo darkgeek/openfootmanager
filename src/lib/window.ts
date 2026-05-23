@@ -12,7 +12,7 @@ interface CloseRequestedEvent {
 type CloseHandler = (event: CloseRequestedEvent) => void | Promise<void>;
 
 class WebWindow {
-  async onCloseRequested(handler: CloseHandler): Promise<() => void> {
+  async onCloseRequested(_handler: CloseHandler): Promise<() => void> {
     // In web mode there is no window-manager close event → never fire the handler.
     // Return a no-op unlisten function so the caller doesn't crash.
     return () => {};

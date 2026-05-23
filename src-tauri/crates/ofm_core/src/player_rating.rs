@@ -168,6 +168,7 @@ fn midfield_line(count: usize) -> Vec<Position> {
 
 fn deep_midfield_line(count: usize) -> Vec<Position> {
     match count {
+        0 => vec![],
         1 => vec![Position::DefensiveMidfielder],
         2 => vec![Position::DefensiveMidfielder, Position::CentralMidfielder],
         _ => vec![Position::DefensiveMidfielder; count],
@@ -176,8 +177,9 @@ fn deep_midfield_line(count: usize) -> Vec<Position> {
 
 fn attacking_midfield_line(count: usize) -> Vec<Position> {
     match count {
+        0 => vec![],
         1 => vec![Position::AttackingMidfielder],
-        2 => vec![Position::AttackingMidfielder, Position::AttackingMidfielder],
+        2 => vec![Position::LeftMidfielder, Position::RightMidfielder],
         3 => vec![
             Position::LeftMidfielder,
             Position::AttackingMidfielder,

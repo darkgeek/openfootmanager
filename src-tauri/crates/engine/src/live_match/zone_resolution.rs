@@ -238,7 +238,15 @@ impl LiveMatchState {
         let mut events = Vec::new();
         let def_side = att_side.opposite();
         let shooter = self.snap_shooter(att_side, rng);
-        let assister = self.snap_player(att_side, Position::Midfielder, rng);
+        // Pick assister; re-roll if it's the same player as the shooter
+        let mut assister = self.snap_player(att_side, Position::Midfielder, rng);
+        for _ in 0..3 {
+            if assister.id != shooter.id {
+                break;
+            }
+            assister = self.snap_player(att_side, Position::Midfielder, rng);
+        }
+        let has_assist = assister.id != shooter.id;
         let goalkeeper = self.snap_player(def_side, Position::Goalkeeper, rng);
 
         let shoot_raw =
@@ -277,11 +285,13 @@ impl LiveMatchState {
             .clamp(0.10, 0.70);
 
         if rng.random_range(0.0..1.0f64) < conversion {
-            let evt = MatchEvent::new(minute, EventType::Goal, att_side, zone)
-                .with_player(&shooter.id)
-                .with_secondary(&assister.id);
-            self.events.push(evt.clone());
-            events.push(evt);
+            let mut goal_evt = MatchEvent::new(minute, EventType::Goal, att_side, zone)
+                .with_player(&shooter.id);
+            if has_assist {
+                goal_evt = goal_evt.with_secondary(&assister.id);
+            }
+            self.events.push(goal_evt.clone());
+            events.push(goal_evt);
             self.add_goal(att_side);
         } else {
             let evt = MatchEvent::new(minute, EventType::ShotSaved, att_side, zone)
