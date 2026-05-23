@@ -333,6 +333,8 @@ pub async fn start_new_game(
     log::info!("[start_new_game] world_source={}, inline_json present={}", 
         world_source, inline_json.is_some());
     
+    // Use Option<League> for the imported world's league
+    let mut world_league: Option<domain::league::League> = None;
     let (teams, players, staff) = if world_source == "random" && inline_json.is_none() {
         log::info!("[start_new_game] Using random world generation");
         generate_world(None)
@@ -340,8 +342,9 @@ pub async fn start_new_game(
         // Use inline JSON data directly
         log::info!("[start_new_game] Loading inline JSON world, length={}", json_str.len());
         let world = load_world_from_json(json_str)?;
-        log::info!("[start_new_game] Loaded world with {} teams, {} players", 
-            world.teams.len(), world.players.len());
+        log::info!("[start_new_game] Loaded world with {} teams, {} players, league={:?}", 
+            world.teams.len(), world.players.len(), world.league.as_ref().map(|l| &l.name));
+        world_league = world.league.clone();
         (world.teams, world.players, world.staff)
     } else {
         let path = world_source.strip_prefix("file:").unwrap_or(&world_source);
@@ -349,10 +352,14 @@ pub async fn start_new_game(
         let json = std::fs::read_to_string(path)
             .map_err(|e| format!("Failed to read world database: {}", e))?;
         let world = load_world_from_json(&json)?;
+        world_league = world.league.clone();
         (world.teams, world.players, world.staff)
     };
 
     let mut new_game = Game::new(clock, manager, teams, players, staff, vec![]);
+    if let Some(league) = world_league {
+        new_game.league = Some(league);
+    }
     // Randomize AI team training focuses for variety
     let _user_team_id = new_game.manager.team_id.clone().unwrap_or_default();
     // AI training focus randomisation (to be restored in Phase 2)
