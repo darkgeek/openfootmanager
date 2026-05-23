@@ -291,6 +291,8 @@ impl GamePersistenceReader {
             vacant_team_days: serde_json::from_str(&meta.vacant_team_days_json).unwrap_or_default(),
             world_history: serde_json::from_str(&meta.world_history_json)
                 .unwrap_or_else(|_| WorldHistoryArchive::default()),
+            training_snapshots: vec![],
+            board_firing_enabled: true,
         };
         ofm_core::season_context::refresh_game_context(&mut game);
 

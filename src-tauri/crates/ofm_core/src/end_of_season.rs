@@ -455,6 +455,9 @@ pub fn process_end_of_season(game: &mut Game) -> EndOfSeasonSummary {
         game.messages.push(sched_msg);
     }
 
+    // 9. Replenish AI squads for the new season
+    crate::ai_team_management::ai_end_of_season_replenishment(game);
+
     crate::season_context::refresh_game_context(game);
 
     summary

@@ -22,7 +22,11 @@ pub struct AppSettings {
     pub ui_scale: String, // "small" | "normal" | "large" | "xlarge"
     #[serde(default)]
     pub high_contrast: bool,
+    #[serde(default = "default_board_firing_enabled")]
+    pub board_firing_enabled: bool,
 }
+
+fn default_board_firing_enabled() -> bool { true }
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct AppSettingsResponse {
@@ -51,6 +55,7 @@ impl Default for AppSettings {
             confirm_advance: false,
             ui_scale: "normal".to_string(),
             high_contrast: false,
+            board_firing_enabled: true,
         }
     }
 }

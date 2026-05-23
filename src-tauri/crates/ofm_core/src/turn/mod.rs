@@ -78,6 +78,7 @@ where
     random_events::check_random_events(game);
     scouting::process_scouting(game);
     transfers::generate_incoming_transfer_offers(game);
+    crate::ai_team_management::ai_transfer_activity(game);
     crate::ai_hiring::update_ai_manager_satisfaction(game);
 
     news::generate_weekly_digest_news(game, &today);
@@ -86,6 +87,14 @@ where
     crate::firing::check_manager_firing(game);
     crate::ai_hiring::process_vacant_ai_clubs(game);
     crate::job_offers::check_job_offers(game);
+
+    // Auto-cleanup old messages
+    crate::messages::cleanup_old_messages(game);
+
+    // Monthly content generation (on 1st of month)
+    if game.clock.current_date.date_naive().day() == 1 {
+        crate::training_report::generate_monthly_training_report(game);
+    }
 
     debug!("[turn] process_day {}: complete, advancing clock", today);
     game.clock.advance_days(1);
@@ -98,6 +107,7 @@ pub fn finish_live_match_day(game: &mut Game) {
     let today = game.clock.current_date.format("%Y-%m-%d").to_string();
     info!("[turn] finish_live_match_day: {}", today);
     generate_matchday_news(game, &today);
+    crate::messages::cleanup_old_messages(game);
 
     crate::contracts::process_contract_expiries(game);
     crate::finances::process_weekly_finances(game);

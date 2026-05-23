@@ -5,6 +5,8 @@ use domain::message::*;
 use rand::RngExt;
 use std::collections::HashMap;
 
+use crate::game::Game;
+
 /// Helper to build a HashMap<String, String> from key-value pairs.
 fn params(pairs: &[(&str, &str)]) -> HashMap<String, String> {
     pairs
@@ -227,4 +229,37 @@ pub fn incoming_transfer_offer_message(
         ]),
     )
     .with_sender_i18n("be.sender.directorOfFootball", "be.role.directorOfFootball")
+}
+
+/// Remove old inbox messages based on priority and age.
+/// Rules:
+/// - Low priority:    7 days
+/// - Normal priority: 14 days
+/// - High priority:   30 days
+/// - Urgent priority: kept forever
+pub fn cleanup_old_messages(game: &mut Game) {
+    let today = match chrono::NaiveDate::parse_from_str(
+        &game.clock.current_date.format("%Y-%m-%d").to_string(),
+        "%Y-%m-%d",
+    ) {
+        Ok(d) => d,
+        Err(_) => return,
+    };
+
+    game.messages.retain(|msg| {
+        let msg_date = match chrono::NaiveDate::parse_from_str(&msg.date, "%Y-%m-%d") {
+            Ok(d) => d,
+            Err(_) => return true,
+        };
+        let days_old = (today - msg_date).num_days();
+        if days_old < 0 {
+            return true;
+        }
+        match msg.priority {
+            MessagePriority::Urgent => true,
+            MessagePriority::High => days_old <= 30,
+            MessagePriority::Normal => days_old <= 14,
+            MessagePriority::Low => days_old <= 7,
+        }
+    });
 }

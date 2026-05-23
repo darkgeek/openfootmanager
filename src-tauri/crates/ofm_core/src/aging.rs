@@ -1,5 +1,6 @@
 use crate::game::Game;
 use chrono::{Datelike, NaiveDate};
+use domain::news::{NewsArticle, NewsCategory};
 use domain::player::Player;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -139,12 +140,44 @@ pub fn apply_seasonal_aging(game: &mut Game, current_date: NaiveDate, season: u3
         apply_attribute_curve(player, age, season);
 
         if should_retire(player, age, current_date, season) {
-            if let Some(team_id) = player.team_id.clone()
+            let is_notable = player.ovr >= 75;
+            let player_name = player.match_name.clone();
+            let player_id = player.id.clone();
+            let team_ref = player.team_id.clone();
+
+            if let Some(team_id) = team_ref.clone()
                 && let Some(team) = game.teams.iter_mut().find(|team| team.id == team_id)
             {
                 team.remove_player_references(&player.id);
             }
             retire_player(player);
+
+            // Generate news article for notable retirements
+            if is_notable {
+                let team_name = team_ref.as_ref()
+                    .and_then(|tid| game.teams.iter().find(|t| &t.id == tid))
+                    .map(|t| t.name.as_str())
+                    .unwrap_or("Unknown");
+
+                let mut article = NewsArticle::new(
+                    format!("retirement_{}", player_id),
+                    format!("{} Announces Retirement", player_name),
+                    format!(
+                        "After a distinguished career, {} has announced their retirement from professional football.\n\n\
+                         The {} star leaves the game with a legacy of quality performances and will be remembered \
+                         as one of the notable players of their generation.",
+                        player_name, team_name
+                    ),
+                    "League Office".to_string(),
+                    current_date.format("%Y-%m-%d").to_string(),
+                    NewsCategory::Editorial,
+                );
+                article.player_ids.push(player_id);
+                if let Some(tid) = team_ref {
+                    article.team_ids.push(tid);
+                }
+                game.news.push(article);
+            }
         }
     }
 }

@@ -107,7 +107,7 @@ pub(super) fn pick_name_from_def(
     ("Player".to_string(), "Unknown".to_string())
 }
 
-pub(super) fn country_to_iso(country: &str) -> &str {
+pub(crate) fn country_to_iso(country: &str) -> &str {
     match country {
         "England" | "ENG" => "ENG",
         "Scotland" | "SCO" => "SCO",
@@ -126,6 +126,7 @@ pub(super) fn country_to_iso(country: &str) -> &str {
         "Belgium" | "BE" => "BE",
         "Croatia" | "HR" => "HR",
         "Sweden" | "SE" => "SE",
+        "China" | "CN" => "CN",
         other => {
             // If already a short code, return as-is.
             if other.len() == 2 || other.len() == 3 {

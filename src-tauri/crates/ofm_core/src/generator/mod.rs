@@ -5,6 +5,7 @@ pub mod world_io;
 
 pub use definitions::*;
 pub use world_io::*;
+pub(crate) use generation::country_to_iso;
 
 use domain::player::{Player, Position};
 use domain::staff::{Staff, StaffRole};

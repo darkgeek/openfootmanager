@@ -1,5 +1,6 @@
 pub mod aging;
 pub mod ai_hiring;
+pub mod ai_team_management;
 pub mod board_objectives;
 pub mod clock;
 pub mod club;
@@ -30,5 +31,6 @@ pub mod season_context;
 pub mod squad_safety;
 pub mod state;
 pub mod training;
+pub mod training_report;
 pub mod transfers;
 pub mod turn;

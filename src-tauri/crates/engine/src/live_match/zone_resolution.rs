@@ -220,10 +220,24 @@ impl LiveMatchState {
         events
     }
 
+    /// Pick a shooter with weighted position probability:
+    /// 85% Forward, 10% Midfielder, 5% Defender.
+    fn snap_shooter<R: Rng>(&self, side: Side, rng: &mut R) -> PlayerSnap {
+        let roll: f64 = rng.random_range(0.0..1.0f64);
+        let preferred = if roll < 0.85 {
+            Position::Forward
+        } else if roll < 0.95 {
+            Position::Midfielder
+        } else {
+            Position::Defender
+        };
+        self.snap_player(side, preferred, rng)
+    }
+
     fn resolve_shot<R: Rng>(&mut self, minute: u8, att_side: Side, rng: &mut R) -> Vec<MatchEvent> {
         let mut events = Vec::new();
         let def_side = att_side.opposite();
-        let shooter = self.snap_player(att_side, Position::Forward, rng);
+        let shooter = self.snap_shooter(att_side, rng);
         let assister = self.snap_player(att_side, Position::Midfielder, rng);
         let goalkeeper = self.snap_player(def_side, Position::Goalkeeper, rng);
 
@@ -334,6 +348,11 @@ impl LiveMatchState {
                 MatchEvent::new(minute, EventType::Injury, att_side, zone).with_player(&fouled.id);
             self.events.push(evt.clone());
             events.push(evt);
+
+            // Apply a 15% penalty to the injured player's match condition
+            if let Some(cond) = self.player_conditions.get_mut(&fouled.id) {
+                *cond = (*cond - 15.0).max(5.0);
+            }
         }
 
         events

@@ -46,6 +46,7 @@ fn compute_coaching_bonus(game: &Game, team_id: &str, focus: &TrainingFocus) -> 
         TrainingFocus::Tactical => Some(CoachingSpecialization::Tactics),
         TrainingFocus::Defending => Some(CoachingSpecialization::Defending),
         TrainingFocus::Attacking => Some(CoachingSpecialization::Attacking),
+        TrainingFocus::Goalkeeping => Some(CoachingSpecialization::GoalKeeping),
         TrainingFocus::Recovery => None,
     };
 
@@ -338,6 +339,13 @@ fn apply_focus_gains(
             try_gain(&mut attrs.shooting, gain);
             try_gain(&mut attrs.dribbling, gain);
             try_gain(&mut attrs.pace, gain * 0.5);
+        }
+        TrainingFocus::Goalkeeping => {
+            try_gain(&mut attrs.handling, gain);
+            try_gain(&mut attrs.reflexes, gain);
+            try_gain(&mut attrs.aerial, gain);
+            try_gain(&mut attrs.positioning, gain * 0.5);
+            try_gain(&mut attrs.decisions, gain * 0.5);
         }
         TrainingFocus::Recovery => {
             // No attribute gains on recovery days

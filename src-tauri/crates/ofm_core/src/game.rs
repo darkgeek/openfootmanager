@@ -12,6 +12,8 @@ use domain::world_history::WorldHistoryArchive;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+fn default_board_firing_enabled() -> bool { true }
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ObjectiveType {
     LeaguePosition,
@@ -92,7 +94,13 @@ pub struct Game {
     #[serde(default)]
     pub vacant_team_days: HashMap<String, u32>,
     #[serde(default)]
+    pub training_snapshots: Vec<crate::training_report::TeamTrainingSnapshot>,
+    #[serde(default)]
     pub world_history: WorldHistoryArchive,
+    /// When false, the board will never fire the manager regardless of satisfaction.
+    /// Set via game difficulty settings.
+    #[serde(default = "default_board_firing_enabled")]
+    pub board_firing_enabled: bool,
 }
 
 impl Game {
@@ -123,7 +131,9 @@ impl Game {
             season_context: SeasonContext::default(),
             days_since_last_job_offer: None,
             vacant_team_days: HashMap::new(),
+            training_snapshots: vec![],
             world_history: WorldHistoryArchive::default(),
+            board_firing_enabled: true,
         };
         crate::football_identity::upgrade_game_football_identities(&mut game);
         crate::season_context::refresh_game_context(&mut game);

@@ -6,12 +6,23 @@ use db::save_manager::SaveManager;
 use ofm_core::state::StateManager;
 use std::sync::Mutex;
 
+// HTTP server module for web version
+#[cfg(feature = "web")]
+pub mod http_server;
+
 const SAVE_MANAGER_UNAVAILABLE_ERROR: &str = "be.error.saveManagerUnavailable";
 
 /// Tauri-managed wrapper around SaveManager.
 pub struct SaveManagerState(pub Mutex<SaveManager>);
 
+/// Run the web HTTP server (used by web binary)
+#[cfg(feature = "web")]
+pub async fn run_web(port: u16) -> Result<(), Box<dyn std::error::Error>> {
+    http_server::start_server(port).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+#[cfg(feature = "tauri")]
 pub fn run() {
     // Workaround for WebKitGTK DMABuf rendering issues on Wayland (Linux)
     #[cfg(target_os = "linux")]

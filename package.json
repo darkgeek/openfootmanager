@@ -6,7 +6,9 @@
   "scripts": {
     "audit:i18n": "node scripts/audit-i18n.mjs",
     "dev": "vite",
+    "dev:web": "vite --mode web",
     "build": "tsc && vite build",
+    "build:web": "tsc && vite build --mode web",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
