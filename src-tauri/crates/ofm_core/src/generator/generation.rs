@@ -157,8 +157,19 @@ pub(super) fn generate_random_player_from_def(
     rng: &mut impl Rng,
 ) -> Player {
     let (first_name, last_name) = pick_name_from_def(nationality, names_def, rng);
-    let full_name = format!("{} {}", first_name, last_name);
-    let match_name = last_name.clone();
+    // Chinese names: surname + given name, no space (e.g. "周洪亮")
+    // Western names: given name + surname, space-separated (e.g. "James Smith")
+    let is_cn = nationality == "CN" || nationality == "China";
+    let full_name = if is_cn {
+        format!("{}{}", last_name, first_name)
+    } else {
+        format!("{} {}", first_name, last_name)
+    };
+    let match_name = if is_cn {
+        full_name.clone()
+    } else {
+        last_name.clone()
+    };
 
     // Distribute positions: GK:0-1, DEF:2-8, MID:9-15, FWD:16-21
     let position = if index < 2 {

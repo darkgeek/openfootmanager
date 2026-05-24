@@ -1488,21 +1488,44 @@ pub async fn resolve_message_action(State(state): State<AppState>, Json(params):
     
     let message_id = params.get("messageId").and_then(|v| v.as_str()).unwrap_or("");
     let action_id = params.get("actionId").and_then(|v| v.as_str()).unwrap_or("");
+    let option_id = params.get("optionId").and_then(|v| v.as_str());
     
-    if let Some(msg) = game.messages.iter_mut().find(|m| m.id == message_id) {
-        if let Some(action) = msg.actions.iter_mut().find(|a| a.id == action_id) {
-            action.resolved = true;
+    // Try youth recruitment response first
+    let mut effect: Option<ofm_core::scouting::YouthRecruitmentEffect> = None;
+    if !message_id.is_empty() && !action_id.is_empty() {
+        if let Some(opt) = option_id {
+            effect = ofm_core::scouting::apply_youth_recruitment_response(
+                &mut game, message_id, action_id, opt,
+            );
+        }
+    }
+    
+    // Fallback: mark action as resolved if not handled by youth recruitment
+    if effect.is_none() {
+        if let Some(msg) = game.messages.iter_mut().find(|m| m.id == message_id) {
+            if let Some(action) = msg.actions.iter_mut().find(|a| a.id == action_id) {
+                action.resolved = true;
+            }
         }
     }
     
     state.state_manager.set_game(game.clone());
     
-    Ok(Json(serde_json::json!({
-        "game": game,
-        "effect": null,
-        "effect_i18n_key": null,
-        "effect_i18n_params": null
-    })))
+    if let Some(e) = effect {
+        Ok(Json(serde_json::json!({
+            "game": game,
+            "effect": e.message,
+            "effect_i18n_key": e.i18n_key,
+            "effect_i18n_params": e.i18n_params
+        })))
+    } else {
+        Ok(Json(serde_json::json!({
+            "game": game,
+            "effect": null,
+            "effect_i18n_key": null,
+            "effect_i18n_params": null
+        })))
+    }
 }
 
 pub async fn auto_select_set_pieces(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
