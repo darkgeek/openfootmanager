@@ -166,6 +166,8 @@ export interface PlayerData {
   condition: number;
   morale: number;
   injury: null | { name: string; days_remaining: number };
+  suspension_games_remaining?: number;
+  accumulated_yellow_cards?: number;
   team_id: string | null;
   retired: boolean;
   squad_role?: PlayerSquadRole;

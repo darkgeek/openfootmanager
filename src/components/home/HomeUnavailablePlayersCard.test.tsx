@@ -55,6 +55,8 @@ function createPlayer(overrides: Partial<PlayerData> = {}): PlayerData {
       name: "Hamstring",
       days_remaining: 6,
     },
+    suspension_games_remaining: 0,
+    accumulated_yellow_cards: 0,
     team_id: "team-1",
     retired: false,
     contract_end: null,

@@ -2480,15 +2480,48 @@ pub async fn preview_contract_termination(
     State(state): State<AppState>,
     Json(params): Json<Value>,
 ) -> Result<Json<Value>, String> {
-    let _player_id = params.get("playerId")
+    let player_id = params.get("playerId")
         .or_else(|| params.get("player_id"))
         .and_then(|v| v.as_str())
         .map(String::from);
     
+    let game = state.state_manager
+        .get_game(|g| g.clone())
+        .ok_or("No active game session".to_string())?;
+    
+    let (pid, pname) = player_id.as_ref().and_then(|pid| {
+        game.players.iter().find(|p| p.id == *pid).map(|p| (p.id.clone(), p.match_name.clone()))
+    }).unwrap_or_default();
+    
+    let team_id = player_id.as_ref().and_then(|pid| {
+        game.players.iter().find(|p| p.id == *pid).and_then(|p| p.team_id.clone())
+    });
+    
+    // Count squad health
+    let healthy_players = team_id.as_ref().map(|tid| {
+        game.players.iter().filter(|p| p.team_id.as_deref() == Some(tid) && p.injury.is_none() && !p.retired).count()
+    }).unwrap_or(0);
+    let healthy_gks = team_id.as_ref().map(|tid| {
+        game.players.iter().filter(|p| p.team_id.as_deref() == Some(tid) && p.injury.is_none() && !p.retired && matches!(p.position, domain::player::Position::Goalkeeper)).count()
+    }).unwrap_or(0);
+    let effective_xi = healthy_players.min(11);
+    let can_field = healthy_players >= 11 && healthy_gks >= 1;
+    
     Ok(Json(serde_json::json!({
-        "terminationFee": 0,
-        "budgetImpact": 0,
-        "canTerminate": true
+        "preview": {
+            "player_id": pid,
+            "player_name": pname,
+            "severance_cost": 0,
+            "squad_safety": {
+                "team_id": team_id.unwrap_or_default(),
+                "projected_roster_size": healthy_players,
+                "healthy_players": healthy_players,
+                "healthy_goalkeepers": healthy_gks,
+                "effective_xi_size": effective_xi,
+                "can_field_matchday_squad": can_field,
+                "missing_reasons": []
+            }
+        }
     })))
 }
 
@@ -2505,14 +2538,14 @@ pub async fn terminate_contract_now(
         .get_game(|g| g.clone())
         .ok_or("No active game session".to_string())?;
     
+    let mut removed_team_id: Option<String> = None;
     if let Some(pid) = _player_id {
-        // Remove player from team
         if let Some(player) = game.players.iter_mut().find(|p| p.id == pid) {
-            let team_id = player.team_id.clone();
+            removed_team_id = player.team_id.clone();
             player.team_id = None;
             player.contract_end = None;
-            if let Some(tid) = team_id {
-                if let Some(team) = game.teams.iter_mut().find(|t| t.id == tid) {
+            if let Some(tid) = &removed_team_id {
+                if let Some(team) = game.teams.iter_mut().find(|t| t.id == *tid) {
                     team.starting_xi_ids.retain(|id| id != &pid);
                 }
             }
@@ -2520,13 +2553,25 @@ pub async fn terminate_contract_now(
     }
     
     state.state_manager.set_game(game.clone());
-    Ok(Json(serde_json::json!({ "game": game })))
+    Ok(Json(serde_json::json!({
+        "game": game,
+        "severance_cost": 0,
+        "squad_safety": {
+            "team_id": removed_team_id.unwrap_or_default(),
+            "projected_roster_size": 0,
+            "healthy_players": 0,
+            "healthy_goalkeepers": 0,
+            "effective_xi_size": 0,
+            "can_field_matchday_squad": true,
+            "missing_reasons": []
+        }
+    })))
 }
 
 pub async fn set_player_squad_role(
     State(state): State<AppState>,
     Json(params): Json<Value>,
-) -> Result<Json<Value>, String> {
+) -> Result<Json<Game>, String> {
     let player_id = params.get("playerId")
         .or_else(|| params.get("player_id"))
         .and_then(|v| v.as_str())
@@ -2558,7 +2603,7 @@ pub async fn set_player_squad_role(
     }
     
     state.state_manager.set_game(game.clone());
-    Ok(Json(serde_json::json!({ "game": game })))
+    Ok(Json(game))
 }
 
 pub async fn start_youth_scouting(

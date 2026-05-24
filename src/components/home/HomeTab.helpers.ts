@@ -43,6 +43,8 @@ export interface HomeRosterOverview {
   exhaustedCount: number;
   hotPlayers: PlayerData[];
   unavailablePlayers: PlayerData[];
+  suspendedPlayers: PlayerData[];
+  playersWithCards: PlayerData[];
 }
 
 export interface HomeRecentResult {
@@ -173,8 +175,35 @@ export function getHomeRosterOverview(
         leftPlayer.full_name.localeCompare(rightPlayer.full_name)
       );
     });
+  
+  const suspendedPlayers = roster
+    .filter((player) => (player.suspension_games_remaining ?? 0) > 0)
+    .sort((leftPlayer, rightPlayer) => {
+      return (
+        (rightPlayer.suspension_games_remaining ?? 0) -
+          (leftPlayer.suspension_games_remaining ?? 0) ||
+        leftPlayer.full_name.localeCompare(rightPlayer.full_name)
+      );
+    });
+
+  // Players with yellow cards (accumulated) or red cards - includes those already suspended
+  const playersWithCards = roster
+    .filter((player) => (player.accumulated_yellow_cards ?? 0) > 0 || (player.suspension_games_remaining ?? 0) > 0)
+    .sort((leftPlayer, rightPlayer) => {
+      // Sort by: suspended first (most games), then by yellow cards, then by name
+      const lSusp = leftPlayer.suspension_games_remaining ?? 0;
+      const rSusp = rightPlayer.suspension_games_remaining ?? 0;
+      const leftSuspended = lSusp > 0 ? 1000 + lSusp : 0;
+      const rightSuspended = rSusp > 0 ? 1000 + rSusp : 0;
+      if (leftSuspended !== rightSuspended) {
+        return rightSuspended - leftSuspended;
+      }
+      return (rightPlayer.accumulated_yellow_cards ?? 0) - (leftPlayer.accumulated_yellow_cards ?? 0) ||
+        leftPlayer.full_name.localeCompare(rightPlayer.full_name);
+    });
+  
   const hotPlayers = roster
-    .filter((player) => player.morale >= 80 && !player.injury)
+    .filter((player) => player.morale >= 80 && !player.injury && player.suspension_games_remaining === 0)
     .sort((leftPlayer, rightPlayer) => rightPlayer.morale - leftPlayer.morale)
     .slice(0, 3);
   const coldPlayers = roster
@@ -189,6 +218,8 @@ export function getHomeRosterOverview(
     exhaustedCount,
     hotPlayers,
     unavailablePlayers,
+    suspendedPlayers,
+    playersWithCards,
   };
 }
 
