@@ -422,8 +422,8 @@ fn clamp_fitness(val: i16) -> u8 {
 
 /// AI team training management: automatically adjust training focus when
 /// squad condition is too low. AI teams will switch to Recovery mode when
-/// average condition drops below threshold, then switch back to their
-/// preferred focus once recovered.
+/// average condition drops below 20%, then switch back to their
+/// preferred focus once recovered (>70%).
 ///
 /// Does nothing for the user's team (they control their own training).
 pub fn ai_manage_team_condition(game: &mut Game) {
@@ -460,8 +460,8 @@ pub fn ai_manage_team_condition(game: &mut Game) {
             team.preferred_training_focus = team.training_focus.clone();
         }
 
-        // If condition is very low (<50), switch to Recovery
-        if avg_condition < 50.0 {
+        // If condition is very low (<20%), switch to Recovery
+        if avg_condition < 20.0 {
             if team.training_focus != TrainingFocus::Recovery {
                 team.preferred_training_focus = team.training_focus.clone();
                 log::info!(
