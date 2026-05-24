@@ -134,7 +134,7 @@ def generate_player(team_id, is_foreign=False, is_minority=False, base_ovr=None,
         "traits": [],
         "ovr": 0,
         "potential": 0,
-        "contract_end": f"{birth_year + random.randint(1,4)}-06-30",
+        "contract_end": f"{2026 + random.randint(1,4)}-06-30",
         "wage": random.randint(2000, 50000) if nationality!="China" else random.randint(1000, 15000),
         "market_value": random.randint(50000, 5000000) if nationality!="China" else random.randint(10000, 800000),
         "stats": {"appearances":0,"goals":0,"assists":0,"clean_sheets":0,"avg_rating":6.5,"minutes_played":0,"yellow_cards":0,"red_cards":0,"shots":0,"shots_on_target":0,"passes_completed":0,"passes_attempted":0,"tackles_won":0,"interceptions":0,"fouls_committed":0,"player_of_match":0,"wins":0,"losses":0,"draws":0},
@@ -292,7 +292,65 @@ for name, city, colors in TEAMS:
     all_players.extend(team_players)
 
 # Generate league
+def generate_staff(teams):
+    """Generate staff for each team: manager, coach, scout, physio."""
+    staff = []
+    staff_first = ["张","李","王","刘","陈","杨","赵","黄","周","吴","徐","孙","胡","朱","高","林","何","郭","马"]
+    staff_last = ["指导","教练","经理","医生","分析师","球探"]
+    roles = ["Coach","Scout","Physio"]
+    
+    for team in teams:
+        for role in roles:
+            sid = random_id()
+            fn_ = random.choice(staff_first)
+            ln_ = random.choice(staff_last)
+            staff.append({
+                "id": sid,
+                "first_name": fn_,
+                "last_name": ln_,
+                "date_of_birth": f"{random.randint(1970,1990)}-{random.randint(1,12):02d}-{random.randint(1,28):02d}",
+                "nationality": "China",
+                "role": role,
+                "attributes": {
+                    "coaching": random.randint(40,90),
+                    "judging_ability": random.randint(40,90),
+                    "judging_potential": random.randint(40,90),
+                    "physiotherapy": random.randint(40,90),
+                },
+                "team_id": team["id"],
+                "specialization": random.choice(["Fitness","Technique","Tactics","Defending","Attacking","GoalKeeping","Youth"]),
+                "contract_end": f"{2026 + random.randint(1,3)}-06-30",
+                "wage": random.randint(2000, 50000),
+            })
+    
+    # Also generate some free-agent staff
+    free_roles = ["Coach","Scout","Physio","AssistantManager"]
+    for _ in range(15):
+        role = random.choice(free_roles)
+        fn_ = random.choice(staff_first)
+        ln_ = random.choice(staff_last)
+        staff.append({
+            "id": random_id(),
+            "first_name": fn_,
+            "last_name": ln_,
+            "date_of_birth": f"{random.randint(1970,1990)}-{random.randint(1,12):02d}-{random.randint(1,28):02d}",
+            "nationality": "China",
+            "role": role,
+            "attributes": {
+                "coaching": random.randint(40,90),
+                "judging_ability": random.randint(40,90),
+                "judging_potential": random.randint(40,90),
+                "physiotherapy": random.randint(40,90),
+            },
+            "team_id": None,
+            "specialization": random.choice(["Fitness","Technique","Tactics","Defending","Attacking","GoalKeeping","Youth"]),
+            "contract_end": f"{2026 + random.randint(1,3)}-06-30",
+            "wage": random.randint(2000, 50000),
+        })
+    return staff
+
 league = generate_league(all_teams)
+all_staff = generate_staff(all_teams)
 
 # Build WorldData
 world = {
@@ -300,7 +358,7 @@ world = {
     "description": "24-team Chinese Super League with realistic Chinese player names and up to 5 foreign players per team",
     "teams": all_teams,
     "players": all_players,
-    "staff": [],
+    "staff": all_staff,
     "managers": [],
     "league": league,
     "news": [],
