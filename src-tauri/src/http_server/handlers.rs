@@ -464,12 +464,8 @@ pub async fn select_team(
     let season_start = game.clock.current_date + Duration::days(30);
     let team_ids: Vec<String> = game.teams.iter().map(|t| t.id.clone()).collect();
     let mut league = schedule::generate_league("Premier Division", 2026, &team_ids, season_start);
-    let opponents: Vec<String> = team_ids
-        .iter()
-        .filter(|candidate_team_id| candidate_team_id.as_str() != team_id)
-        .cloned()
-        .collect();
-    let friendlies = schedule::generate_preseason_friendlies(&opponents, season_start, 3);
+    // Generate preseason friendlies INCLUDING user's team
+    let friendlies = schedule::generate_preseason_friendlies(&team_ids, season_start, 3);
     schedule::append_fixtures(&mut league, friendlies);
     game.league = Some(league);
     refresh_game_context(&mut game);
@@ -751,6 +747,9 @@ pub async fn advance_time_with_mode(
                 let session = live_match_manager::create_live_match(&game, fixture_idx, match_mode_enum, false)
                     .map_err(|e| e.to_string())?;
                 let snapshot = session.snapshot();
+                log::info!("[match] formation debug: home_team={:?}, home_formation={:?}, home_players={:?}",
+                    snapshot.home_team.name, snapshot.home_team.formation,
+                    snapshot.home_team.players.iter().map(|p| &p.position).collect::<Vec<_>>());
                 state.state_manager.set_live_match(session);
                 
                 return Ok(Json(serde_json::json!({
@@ -1592,11 +1591,24 @@ pub async fn counter_offer(State(state): State<AppState>, Json(_params): Json<Va
     Ok(Json(serde_json::json!({})))
 }
 
-pub async fn send_scout(State(state): State<AppState>, Json(_params): Json<Value>) -> Result<Json<Game>, String> {
-    state.state_manager
+pub async fn send_scout(State(state): State<AppState>, Json(params): Json<Value>) -> Result<Json<Game>, String> {
+    let scout_id = params.get("scoutId")
+        .or_else(|| params.get("scout_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing scoutId")?;
+    let player_id = params.get("playerId")
+        .or_else(|| params.get("player_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing playerId")?;
+    
+    let mut game = state.state_manager
         .get_game(|g| g.clone())
-        .ok_or("No active game session".to_string())
-        .map(Json)
+        .ok_or("No active game session".to_string())?;
+    
+    ofm_core::scouting::send_scout(&mut game, scout_id, player_id)?;
+    
+    state.state_manager.set_game(game.clone());
+    Ok(Json(game))
 }
 
 pub async fn check_season_complete(State(state): State<AppState>) -> Result<Json<bool>, String> {
@@ -2529,32 +2541,92 @@ pub async fn set_player_squad_role(
 pub async fn start_youth_scouting(
     State(state): State<AppState>,
     Json(params): Json<Value>,
-) -> Result<Json<Value>, String> {
-    // Stub — will integrate with develop's youth scouting system
-    let game = state.state_manager
+) -> Result<Json<Game>, String> {
+    let scout_id = params.get("scoutId")
+        .or_else(|| params.get("scout_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing scoutId")?;
+    let region_str = params.get("region")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Domestic");
+    let objective_str = params.get("objective")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Balanced");
+    let target_position = params.get("targetPosition")
+        .or_else(|| params.get("target_position"))
+        .and_then(|v| v.as_str())
+        .map(|s| match s {
+            "Goalkeeper" => domain::player::Position::Goalkeeper,
+            "Defender" => domain::player::Position::Defender,
+            "Midfielder" => domain::player::Position::Midfielder,
+            "Forward" => domain::player::Position::Forward,
+            _ => domain::player::Position::Midfielder,
+        });
+    
+    let region = match region_str {
+        "International" => ofm_core::game::YouthScoutingRegion::International,
+        _ => ofm_core::game::YouthScoutingRegion::Domestic,
+    };
+    let objective = match objective_str {
+        "HighPotential" => ofm_core::game::YouthScoutingObjective::HighPotential,
+        "ReadySoon" => ofm_core::game::YouthScoutingObjective::ReadySoon,
+        _ => ofm_core::game::YouthScoutingObjective::Balanced,
+    };
+    
+    let mut game = state.state_manager
         .get_game(|g| g.clone())
         .ok_or("No active game session".to_string())?;
-    Ok(Json(serde_json::json!({ "game": game })))
+    
+    ofm_core::scouting::start_youth_scouting(
+        &mut game,
+        scout_id,
+        region,
+        objective,
+        target_position,
+    )?;
+    
+    state.state_manager.set_game(game.clone());
+    Ok(Json(game))
 }
 
 pub async fn cancel_youth_scouting(
     State(state): State<AppState>,
     Json(params): Json<Value>,
-) -> Result<Json<Value>, String> {
-    // Stub — will integrate with develop's youth scouting system
-    let game = state.state_manager
+) -> Result<Json<Game>, String> {
+    let assignment_id = params.get("assignmentId")
+        .or_else(|| params.get("assignment_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing assignmentId")?;
+    
+    let mut game = state.state_manager
         .get_game(|g| g.clone())
         .ok_or("No active game session".to_string())?;
-    Ok(Json(serde_json::json!({ "game": game })))
+    
+    ofm_core::scouting::cancel_youth_scouting(&mut game, assignment_id)?;
+    
+    state.state_manager.set_game(game.clone());
+    Ok(Json(game))
 }
 
 pub async fn reassign_youth_scouting(
     State(state): State<AppState>,
     Json(params): Json<Value>,
-) -> Result<Json<Value>, String> {
-    // Stub — will integrate with develop's youth scouting system
-    let game = state.state_manager
+) -> Result<Json<Game>, String> {
+    let assignment_id = params.get("assignmentId")
+        .or_else(|| params.get("assignment_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing assignmentId")?;
+    let scout_id = params.get("scoutId")
+        .or_else(|| params.get("scout_id"))
+        .and_then(|v| v.as_str())
+        .ok_or("Missing scoutId")?;
+    
+    let mut game = state.state_manager
         .get_game(|g| g.clone())
         .ok_or("No active game session".to_string())?;
-    Ok(Json(serde_json::json!({ "game": game })))
+    
+    ofm_core::scouting::reassign_youth_scouting(&mut game, assignment_id, scout_id)?;
+    
+    state.state_manager.set_game(game.clone());
+    Ok(Json(game))
 }
