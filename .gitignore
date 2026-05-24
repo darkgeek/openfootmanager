@@ -35,4 +35,5 @@ coverage/
 .claude/settings.local.json
 
 # Local Vitest reporter output
-vitest-mainmenu.json
+vitest-mainmenu.jsonscripts/csl_world_*.json
+scripts/generate_csl_world.py
