@@ -113,6 +113,8 @@ export default function MatchSimulation() {
           awayTeam: snap.away_team.name,
           homePlayers: snap.home_team.players.length,
           homeTeam: snap.home_team.name,
+          homeFormation: snap.home_team.formation,
+          homeFwds: snap.home_team.players.filter(p=>p.position==='Forward').length,
           phase: snap.phase,
         });
         if (!isCancelled) {

@@ -200,6 +200,9 @@ pub fn create_live_match(
     // Build engine TeamData (starting XI = first 11 players by position)
     let (home_xi, home_bench) = build_team_with_bench(game, &home_team_id);
     let (away_xi, away_bench) = build_team_with_bench(game, &away_team_id);
+    log::info!("[create_live_match] home={}, home_formation={}, home_xi_count={}, home_fwds={:?}",
+        home_xi.name, home_xi.formation, home_xi.players.len(),
+        home_xi.players.iter().filter(|p| p.position == engine::Position::Forward).count());
     let home_starter_ids = home_xi
         .players
         .iter()

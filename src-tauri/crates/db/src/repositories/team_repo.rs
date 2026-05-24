@@ -167,6 +167,7 @@ fn row_to_team(row: &rusqlite::Row) -> rusqlite::Result<Team> {
         formation: row.get(15)?,
         play_style: parse_play_style(&play_style_str),
         training_focus: parse_training_focus(&training_focus_str),
+        preferred_training_focus: parse_training_focus(&training_focus_str),
         training_intensity: parse_training_intensity(&training_intensity_str),
         training_schedule: parse_training_schedule(&training_schedule_str),
         training_groups: serde_json::from_str(&training_groups_json).unwrap_or_default(),

@@ -172,6 +172,7 @@ export function Lineups({ snapshot }: { snapshot: MatchSnapshot }) {
     yellows: Record<string, number>,
     sentOff: string[],
   ) => {
+    console.log('[Lineups] rendering team', team.name, 'formation=', team.formation, 'players=', team.players.map(p=>({name:p.name, pos:p.position, cond:p.condition})));
     const positions = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
     const subbedOnIds = new Set(
       snapshot.substitutions

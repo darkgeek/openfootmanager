@@ -419,3 +419,74 @@ fn recovery_factor_from_fitness(fitness: u8) -> f64 {
 fn clamp_fitness(val: i16) -> u8 {
     val.clamp(0, 100) as u8
 }
+
+/// AI team training management: automatically adjust training focus when
+/// squad condition is too low. AI teams will switch to Recovery mode when
+/// average condition drops below threshold, then switch back to their
+/// preferred focus once recovered.
+///
+/// Does nothing for the user's team (they control their own training).
+pub fn ai_manage_team_condition(game: &mut Game) {
+    let user_team_id = match game.manager.team_id.as_deref() {
+        Some(id) => id,
+        None => return,
+    };
+
+    for team in game.teams.iter_mut() {
+        // Skip user's team
+        if team.id == user_team_id {
+            continue;
+        }
+
+        // Calculate average condition for this team's active players
+        let team_players: Vec<_> = game.players
+            .iter()
+            .filter(|p| p.team_id.as_deref() == Some(&team.id) && p.condition > 0)
+            .collect();
+
+        if team_players.is_empty() {
+            continue;
+        }
+
+        let total_condition: u32 = team_players
+            .iter()
+            .map(|p| p.condition as u32)
+            .sum();
+        let avg_condition = total_condition as f64 / team_players.len() as f64;
+
+        // Remember current focus as preferred when first needed
+        if team.training_focus != TrainingFocus::Recovery
+            && team.preferred_training_focus == TrainingFocus::Physical {
+            team.preferred_training_focus = team.training_focus.clone();
+        }
+
+        // If condition is very low (<50), switch to Recovery
+        if avg_condition < 50.0 {
+            if team.training_focus != TrainingFocus::Recovery {
+                team.preferred_training_focus = team.training_focus.clone();
+                log::info!(
+                    "[AI training] {} switching to Recovery (avg condition: {:.0}%)",
+                    team.name,
+                    avg_condition
+                );
+                team.training_focus = TrainingFocus::Recovery;
+                team.training_intensity = TrainingIntensity::Low;
+            }
+        }
+        // If condition is recovered (>70) and we're in Recovery, switch back
+        else if avg_condition > 70.0 && team.training_focus == TrainingFocus::Recovery {
+            log::info!(
+                "[AI training] {} switching back to {:?} (avg condition: {:.0}%)",
+                team.name,
+                team.preferred_training_focus,
+                avg_condition
+            );
+            team.training_focus = team.preferred_training_focus.clone();
+            team.training_intensity = TrainingIntensity::Medium;
+        }
+        // If condition is medium (50-70), use lower intensity if currently high
+        else if avg_condition < 65.0 && team.training_intensity == TrainingIntensity::High {
+            team.training_intensity = TrainingIntensity::Medium;
+        }
+    }
+}

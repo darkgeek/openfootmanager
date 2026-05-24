@@ -26,6 +26,9 @@ pub(super) fn build_team_with_bench(game: &Game, team_id: &str) -> (TeamData, Ve
         None => ("Unknown".into(), "4-4-2".into(), PlayStyle::Balanced, vec![]),
     };
 
+    log::info!("[team_builder] build_team_with_bench: team={}, formation={}, saved_xi_count={}",
+        name, formation, saved_xi_ids.len());
+
     // Collect all available (non-injured) players for this team,
     // also excluding suspended players.
     let available_players: Vec<&domain::player::Player> = game
@@ -84,7 +87,7 @@ pub(super) fn build_team_with_bench(game: &Game, team_id: &str) -> (TeamData, Ve
 
             if let Some(player) = player_opt {
                 used_ids.insert(player.id.clone());
-                starting_xi.push(to_engine_player(player));
+                starting_xi.push(to_engine_player_for_slot(player, slot));
             }
         }
     } else {
@@ -106,7 +109,7 @@ pub(super) fn build_team_with_bench(game: &Game, team_id: &str) -> (TeamData, Ve
             };
 
             used_ids.insert(player.id.clone());
-            starting_xi.push(to_engine_player(player));
+            starting_xi.push(to_engine_player_for_slot(player, slot));
         }
     }
 
@@ -132,8 +135,14 @@ pub(super) fn build_team_with_bench(game: &Game, team_id: &str) -> (TeamData, Ve
     (team_data, bench)
 }
 
-fn to_engine_player(p: &domain::player::Player) -> PlayerData {
-    let pos = match p.position.to_group_position() {
+/// Convert a player to engine PlayerData, using the slot's domain position
+/// for the engine position rather than the player's own position.
+/// This ensures the line-up matches the formation even when players
+/// have been assigned different positions by set_formation or the CSL JSON.
+/// Convert a player to engine PlayerData, using the slot's domain position
+/// for the engine position rather than the player's own position.
+fn to_engine_player_for_slot(p: &domain::player::Player, slot: &DomainPosition) -> PlayerData {
+    let pos = match slot.to_group_position() {
         DomainPosition::Goalkeeper => EnginePosition::Goalkeeper,
         DomainPosition::Defender => EnginePosition::Defender,
         DomainPosition::Midfielder => EnginePosition::Midfielder,
@@ -173,6 +182,46 @@ fn to_engine_player(p: &domain::player::Player) -> PlayerData {
 
 /// Auto-select set-piece takers from a set of player IDs.
 /// Returns (captain_id, penalty_taker_id, free_kick_taker_id, corner_taker_id).
+/// Convert a player to engine PlayerData using the player's own domain position.
+/// Used for bench players who are not assigned to a specific formation slot.
+fn to_engine_player(p: &domain::player::Player) -> PlayerData {
+    let pos = match p.position.to_group_position() {
+        DomainPosition::Goalkeeper => EnginePosition::Goalkeeper,
+        DomainPosition::Defender => EnginePosition::Defender,
+        DomainPosition::Midfielder => EnginePosition::Midfielder,
+        DomainPosition::Forward => EnginePosition::Forward,
+        _ => EnginePosition::Midfielder,
+    };
+    PlayerData {
+        id: p.id.clone(),
+        name: p.match_name.clone(),
+        position: pos,
+        ovr: p.ovr,
+        condition: p.condition,
+        fitness: p.fitness,
+        pace: p.attributes.pace,
+        stamina: p.attributes.stamina,
+        strength: p.attributes.strength,
+        agility: p.attributes.agility,
+        passing: p.attributes.passing,
+        shooting: p.attributes.shooting,
+        tackling: p.attributes.tackling,
+        dribbling: p.attributes.dribbling,
+        defending: p.attributes.defending,
+        positioning: p.attributes.positioning,
+        vision: p.attributes.vision,
+        decisions: p.attributes.decisions,
+        composure: p.attributes.composure,
+        aggression: p.attributes.aggression,
+        teamwork: p.attributes.teamwork,
+        leadership: p.attributes.leadership,
+        handling: p.attributes.handling,
+        reflexes: p.attributes.reflexes,
+        aerial: p.attributes.aerial,
+        traits: p.traits.iter().map(|t| format!("{:?}", t)).collect(),
+    }
+}
+
 pub fn auto_select_set_pieces(
     game: &Game,
     player_ids: &[String],

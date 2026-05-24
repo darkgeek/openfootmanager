@@ -79,6 +79,7 @@ where
     scouting::process_scouting(game);
     transfers::generate_incoming_transfer_offers(game);
     crate::ai_team_management::ai_transfer_activity(game);
+    crate::training::ai_manage_team_condition(game);
     crate::ai_hiring::update_ai_manager_satisfaction(game);
 
     // Process suspension reductions (decrement after each day passes)

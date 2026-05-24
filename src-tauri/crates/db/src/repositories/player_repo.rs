@@ -37,8 +37,9 @@ pub fn upsert_player(conn: &Connection, p: &Player) -> Result<(), String> {
           contract_end, wage, market_value, stats, career,
           transfer_listed, loan_listed, transfer_offers, alternate_positions,
           natural_position, training_focus, morale_core, footedness, weak_foot, fitness, squad_role,
-          ovr, potential)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33)",
+          ovr, potential,
+          suspension_games_remaining, accumulated_yellow_cards)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33, ?34, ?35)",
         params![
             p.id,
             p.match_name,
@@ -73,6 +74,8 @@ pub fn upsert_player(conn: &Connection, p: &Player) -> Result<(), String> {
             format!("{:?}", p.squad_role),
             p.ovr as i64,
             p.potential as i64,
+            p.suspension_games_remaining,
+            p.accumulated_yellow_cards,
         ],
     )
     .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
@@ -146,7 +149,8 @@ pub fn load_all_players(conn: &Connection) -> Result<Vec<Player>, String> {
                     contract_end, wage, market_value, stats, career,
                     transfer_listed, loan_listed, transfer_offers, alternate_positions,
                     natural_position, training_focus, morale_core, footedness, weak_foot, fitness, squad_role,
-                    ovr, potential
+                    ovr, potential,
+                    suspension_games_remaining, accumulated_yellow_cards
              FROM players",
         )
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
@@ -171,7 +175,8 @@ pub fn load_players_by_team(conn: &Connection, team_id: &str) -> Result<Vec<Play
                     contract_end, wage, market_value, stats, career,
                     transfer_listed, loan_listed, transfer_offers, alternate_positions,
                     natural_position, training_focus, morale_core, footedness, weak_foot, fitness, squad_role,
-                    ovr, potential
+                    ovr, potential,
+                    suspension_games_remaining, accumulated_yellow_cards
              FROM players WHERE team_id = ?1",
         )
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
@@ -206,6 +211,8 @@ fn row_to_player(row: &rusqlite::Row) -> rusqlite::Result<Player> {
     let squad_role_str: String = row.get(30).unwrap_or_else(|_| "Senior".to_string());
     let ovr: u8 = row.get::<_, i64>(31).unwrap_or(0) as u8; // default 0 for saves before V20
     let potential: u8 = row.get::<_, i64>(32).unwrap_or(0) as u8; // default 0 for saves before V20
+    let suspension_games_remaining: u8 = row.get::<_, i64>(33).unwrap_or(0) as u8;
+    let accumulated_yellow_cards: u8 = row.get::<_, i64>(34).unwrap_or(0) as u8;
     let transfer_listed_int: i32 = row.get(20)?;
     let loan_listed_int: i32 = row.get(21)?;
     let market_value_i64: i64 = row.get(17)?;
@@ -271,6 +278,8 @@ fn row_to_player(row: &rusqlite::Row) -> rusqlite::Result<Player> {
         loan_listed: loan_listed_int != 0,
         transfer_offers: serde_json::from_str(&offers_json).unwrap_or_default(),
         morale_core: serde_json::from_str(&morale_core_json).unwrap_or_default(),
+        suspension_games_remaining,
+        accumulated_yellow_cards,
     })
 }
 
