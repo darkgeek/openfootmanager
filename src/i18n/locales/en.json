@@ -36,14 +36,14 @@
     "selectCountry": "Select Country/Region...",
     "searchNationalities": "Search nationalities...",
     "chooseWorld": "Choose World",
-    "placeholderFirst": "e.g. José",
+    "placeholderFirst": "e.g. Jos\u00e9",
     "placeholderLast": "e.g. Mourinho"
   },
   "validation": {
     "required": "{{field}} is required",
     "maxLength": "{{field}} must not exceed {{max}} characters",
     "minStartYear": "Start year must be {{min}} or later",
-    "minAge": "Manager must be at least {{min}} years old — change the date of birth to continue.",
+    "minAge": "Manager must be at least {{min}} years old \u2014 change the date of birth to continue.",
     "invalidDate": "Invalid date",
     "invalidDob": "Invalid date of birth"
   },
@@ -122,11 +122,11 @@
     "expandSidebar": "Expand sidebar",
     "alerts": {
       "exhausted": "{{count}} player(s) in critical condition (<25%)",
-      "injuredStartingXi": "{{count}} injured player(s) in Starting XI — replace them",
-      "incompleteStartingXi": "Starting XI incomplete — set your lineup",
+      "injuredStartingXi": "{{count}} injured player(s) in Starting XI \u2014 replace them",
+      "incompleteStartingXi": "Starting XI incomplete \u2014 set your lineup",
       "urgentUnread": "{{count}} urgent message(s) unread",
       "matchTodayStartingXi": "Match today! Set your starting XI",
-      "financeCrisis": "Finances critical — balance {{balance}}, runway {{weeks}} week(s)",
+      "financeCrisis": "Finances critical \u2014 balance {{balance}}, runway {{weeks}} week(s)",
       "financeRunway": "Cash runway down to {{count}} week(s)",
       "wagePressure": "Wage bill at {{percent}}% of budget"
     },
@@ -160,11 +160,11 @@
   },
   "onboarding": {
     "title": "Getting Started",
-    "description": "Complete these steps to prepare your team for the upcoming season. Staff are especially important — they boost training and recovery.",
+    "description": "Complete these steps to prepare your team for the upcoming season. Staff are especially important \u2014 they boost training and recovery.",
     "reviewSquad": "Review your squad",
     "reviewSquadDesc": "Check player stats, condition, and traits",
     "hireStaff": "Hire coaching staff",
-    "hireStaffDesc": "Staff boost training quality and recovery — hire a Coach and Physio",
+    "hireStaffDesc": "Staff boost training quality and recovery \u2014 hire a Coach and Physio",
     "setTactics": "Set your formation & tactics",
     "setTacticsDesc": "Choose a formation and play style that fits your squad",
     "configTraining": "Configure training",
@@ -209,7 +209,7 @@
     "matchdayN": "Matchday {{n}}",
     "met": "Met",
     "inProgress": "In Progress",
-    "objectivesMet": "{{done}}/{{total}} objectives met — Board satisfaction: {{pct}}%",
+    "objectivesMet": "{{done}}/{{total}} objectives met \u2014 Board satisfaction: {{pct}}%",
     "unavailablePlayers": "Unavailable Players",
     "daysUnavailable": "{{count}} day(s) remaining",
     "suspendedPlayers": "Suspended Players",
@@ -256,7 +256,7 @@
     "squad": "Squad",
     "finances": "Finances",
     "avgOvr": "Avg OVR",
-    "seats": "{{name}} — {{capacity}} seats",
+    "seats": "{{name}} \u2014 {{capacity}} seats",
     "repWorldClass": "World Class",
     "repStrong": "Strong",
     "repAverage": "Average",
@@ -429,7 +429,7 @@
       "Defending": "Defending",
       "Attacking": "Attacking",
       "Goalkeeping": "Goalkeeping",
-        "Recovery": "Recovery",
+      "Recovery": "Recovery",
       "General": "General"
     },
     "attributes": {
@@ -477,7 +477,7 @@
       "worldClass": "World class potential",
       "strong": "Strong development potential",
       "moderate": "Moderate potential for growth",
-      "unclear": "Potential unclear — further scouting recommended"
+      "unclear": "Potential unclear \u2014 further scouting recommended"
     },
     "scoutConfidence": {
       "high": "High",
@@ -555,7 +555,7 @@
     "rolesHint": "Choose your leadership hierarchy and dead-ball specialists from the current Starting XI.",
     "autoSelectAssignments": "Auto-select defaults",
     "noStartersForRoles": "Set your starting XI to assign team roles and set pieces.",
-    "startingXI": "Starting XI — {{formation}}",
+    "startingXI": "Starting XI \u2014 {{formation}}",
     "fullSquad": "Full Squad",
     "pitchInteractionHint": "Drag players between the pitch and bench, click one player to inspect them, click a second player to compare them, then confirm the swap in the compare panel.",
     "selectedPlayer": "Selected player",
@@ -576,7 +576,7 @@
     "avgMorale": "Avg Morale",
     "train": "Train",
     "rest": "Rest",
-    "todayIs": "Today is <strong>{{day}}</strong> — {{type}}.",
+    "todayIs": "Today is <strong>{{day}}</strong> \u2014 {{type}}.",
     "aTrainingDay": "a training day",
     "aRestDay": "a rest day",
     "currentlyTraining": "Currently training: <strong>{{attrs}}</strong> at <strong>{{intensity}}</strong> intensity.",
@@ -623,26 +623,26 @@
         "desc": "Increase goal threat"
       },
       "Goalkeeping": {
-          "label": "Goalkeeping",
-          "desc": "Develop goalkeeper skills"
-        },
-        "Recovery": {
+        "label": "Goalkeeping",
+        "desc": "Develop goalkeeper skills"
+      },
+      "Recovery": {
         "label": "Recovery",
-        "desc": "Rest day — max recovery"
+        "desc": "Rest day \u2014 max recovery"
       }
     },
     "intensities": {
       "Low": {
         "label": "Low",
-        "desc": "Gentle session — less fatigue, slower growth"
+        "desc": "Gentle session \u2014 less fatigue, slower growth"
       },
       "Medium": {
         "label": "Medium",
-        "desc": "Balanced workload — standard results"
+        "desc": "Balanced workload \u2014 standard results"
       },
       "High": {
         "label": "High",
-        "desc": "Intense drills — faster growth, more fatigue"
+        "desc": "Intense drills \u2014 faster growth, more fatigue"
       }
     },
     "schedules": {
@@ -738,7 +738,7 @@
     "budget": "Budget",
     "underBudget": "Under budget",
     "overBudget": "Over budget!",
-    "payroll": "Payroll — Top Earners",
+    "payroll": "Payroll \u2014 Top Earners",
     "squadValue": "Squad Value",
     "clubBalance": "Club Balance",
     "wageBudget": "Wage Budget",
@@ -818,7 +818,7 @@
     "important": "Important",
     "effectOutcomeLabel": "Outcome",
     "chooseResponse": "Choose your response",
-    "chooseResponseOutcomeVaries": "Choose your response — outcome varies",
+    "chooseResponseOutcomeVaries": "Choose your response \u2014 outcome varies",
     "responded": "Response sent",
     "youthProspectSigned": "Signed to academy",
     "openMessage": "Open message",
@@ -884,7 +884,7 @@
     "fanBehind": "Fans are behind the team.",
     "fanMixed": "Fan sentiment is mixed.",
     "fanRestless": "Fans are growing restless.",
-    "fanUnrest": "Fan unrest — protests likely."
+    "fanUnrest": "Fan unrest \u2014 protests likely."
   },
   "managersWorld": {
     "title": "Managers",
@@ -930,7 +930,7 @@
   },
   "transfers": {
     "centre": "Transfer Centre",
-    "transferWindow": "{{team}} — Transfer Window",
+    "transferWindow": "{{team}} \u2014 Transfer Window",
     "myTransferList": "My Transfer List",
     "transferMarket": "Transfer Market",
     "freeAgents": "Free Agents",
@@ -951,16 +951,16 @@
     "offerContract": "Offer Contract",
     "bid": "Bid",
     "playerValue": "Value: {{value}}",
-    "bidAmount": "Bid Amount (€M)",
+    "bidAmount": "Bid Amount (\u20acM)",
     "bidImpactTitle": "Projected impact",
-    "bidImpactTransferBudget": "Transfer budget {{before}} → {{after}}",
-    "bidImpactBalance": "Club balance {{before}} → {{after}}",
+    "bidImpactTransferBudget": "Transfer budget {{before}} \u2192 {{after}}",
+    "bidImpactBalance": "Club balance {{before}} \u2192 {{after}}",
     "bidImpactWagePressure": "Projected wage budget usage {{percent}}%",
     "bidImpactOverTransferBudget": "This bid exceeds your transfer budget",
     "bidImpactOverBalance": "This bid would push the club into debt",
     "bidAccepted": "Bid accepted! Player signed.",
     "bidCountered": "They came back with revised terms.",
-    "bidRejected": "Bid rejected — offer too low.",
+    "bidRejected": "Bid rejected \u2014 offer too low.",
     "submitting": "Submitting...",
     "submitBid": "Submit Bid",
     "close": "Close",
@@ -1030,7 +1030,7 @@
     "nPlayersFound": "{{count}} player(s) found",
     "noMatch": "No players match your filters.",
     "showingFirst": "Showing first {{shown}} of {{total}} players. Refine your search to see more.",
-    "showingRange": "{{from}}–{{to}} of {{total}}"
+    "showingRange": "{{from}}\u2013{{to}} of {{total}}"
   },
   "teams": {
     "yourTeam": "Your Team",
@@ -1182,15 +1182,15 @@
     "reds": "Reds",
     "avgRating": "Avg Rating",
     "careerHistory": "Career History",
-    "noCareer": "No career history yet — first season.",
+    "noCareer": "No career history yet \u2014 first season.",
     "nApps": "{{count}} apps",
     "nGoals": "{{count}} goals",
     "nAssists": "{{count}} assists",
-    "daysRemaining": "{{count}} days remaining — Player unavailable for selection",
+    "daysRemaining": "{{count}} days remaining \u2014 Player unavailable for selection",
     "renewalProjectionTitle": "Projected financial impact",
-    "renewalProjectionWageBill": "Weekly wage bill {{before}} → {{after}}",
-    "renewalProjectionBudgetUsage": "Wage budget use {{before}}% → {{after}}%",
-    "renewalProjectionRunway": "Cash runway {{before}} → {{after}}"
+    "renewalProjectionWageBill": "Weekly wage bill {{before}} \u2192 {{after}}",
+    "renewalProjectionBudgetUsage": "Wage budget use {{before}}% \u2192 {{after}}%",
+    "renewalProjectionRunway": "Cash runway {{before}} \u2192 {{after}}"
   },
   "teamProfile": {
     "clubInfo": "Club Information",
@@ -1297,7 +1297,9 @@
     "enterFullscreen": "Enter",
     "exitFullscreen": "Exit",
     "switchToLightMode": "Switch to light mode",
-    "switchToDarkMode": "Switch to dark mode"
+    "switchToDarkMode": "Switch to dark mode",
+    "boardFiring": "Disable Board Firing",
+    "boardFiringDesc": "When enabled, the board will never fire the manager regardless of performance"
   },
   "preMatch": {
     "formationFit": "Formation Fit",
@@ -1348,7 +1350,7 @@
     "slots": "slots",
     "judgingAbility": "Judging Ability",
     "judgingPotential": "Judging Potential",
-    "scoutingPlayer": "Scouting: <strong>{{name}}</strong> — {{days}}d left",
+    "scoutingPlayer": "Scouting: <strong>{{name}}</strong> \u2014 {{days}}d left",
     "scoutLabel": "Scout: {{name}}",
     "daysLeft": "{{days}} days left",
     "noScouts": "You don't have any scouts yet.",
@@ -1368,7 +1370,7 @@
     "noAlternateScout": "No alternate scout",
     "scoutBtn": "Scout",
     "noPlayersFound": "No players found matching your search.",
-    "showingRange": "Showing {{from}}–{{to}} of {{total}}",
+    "showingRange": "Showing {{from}}\u2013{{to}} of {{total}}",
     "previousPage": "Previous page",
     "nextPage": "Next page",
     "viewPlayer": "View",
@@ -1493,14 +1495,14 @@
     "addressPress": "Address the press or head back.",
     "skip": "Skip",
     "pressConference": "Press Conference",
-    "pressSubtitle": "Post-match press conference — {{team}}",
-    "skipConference": "Skip Conference →",
+    "pressSubtitle": "Post-match press conference \u2014 {{team}}",
+    "skipConference": "Skip Conference \u2192",
     "submitting": "Submitting...",
     "leaveConference": "Leave Conference",
     "nextQuestion": "Next Question",
     "pressReport": {
       "headlineManagerQuote": "{{team}} Manager: {{quote}}",
-      "headlinePressConf": "Press Conference: \"{{quote}}\" — {{team}} boss",
+      "headlinePressConf": "Press Conference: \"{{quote}}\" \u2014 {{team}} boss",
       "headlinePostMatch": "Post-Match: {{team}} on {{result}}",
       "bodyIntro": "Speaking after the {{result}} result, the {{team}} manager addressed the press.",
       "bodyOutro": "The conference covered the result, tactical approach, and what lies ahead for the team.",
@@ -1610,7 +1612,7 @@
             },
             "shared": {
               "tone": "Confident",
-              "text": "We all celebrate together — players, staff, and supporters. This is their victory too."
+              "text": "We all celebrate together \u2014 players, staff, and supporters. This is their victory too."
             },
             "deflect": {
               "tone": "Deflect",
@@ -1737,7 +1739,7 @@
     "startNextSeason": "Start Next Season",
     "processing": "Processing...",
     "statsArchived": "Player stats will be archived. A new schedule will be generated.",
-    "seasonLine": "{{league}} — Season {{season}}",
+    "seasonLine": "{{league}} \u2014 Season {{season}}",
     "newSeason": "Season {{n}}",
     "newScheduleReleased": "The new schedule has been released. Good luck!",
     "goldenBoot": "Golden Boot",
@@ -1754,12 +1756,12 @@
     "continueAnyway": "Continue Anyway",
     "blockers": {
       "injuredXi": "{{count}} injured player(s) in Starting XI: {{players}}",
-      "incompleteXi": "Starting XI has only {{count}} healthy players — set your lineup",
-      "squadSizeCrisis": "Squad has only {{count}} contracted player(s) — sign players before match day",
+      "incompleteXi": "Starting XI has only {{count}} healthy players \u2014 set your lineup",
+      "squadSizeCrisis": "Squad has only {{count}} contracted player(s) \u2014 sign players before match day",
       "plannedContractExitCrisis": "Planned contract exits would leave only {{healthyPlayers}} healthy player(s) and {{goalkeepers}} goalkeeper(s): {{players}}",
       "urgentMessages": "{{count}} urgent unread message(s)",
       "keyContractRisk": "Key player contract risk in squad planning: {{players}}",
-      "contractWageRisk": "{{amount}} of wages are tied to at-risk contracts — review your wage budget"
+      "contractWageRisk": "{{amount}} of wages are tied to at-risk contracts \u2014 review your wage budget"
     }
   },
   "squadCompare": {
@@ -1943,26 +1945,26 @@
         "subject2": "{{team}} Awaits Your Leadership",
         "body0": "The board of directors at {{team}} is delighted to welcome you as the new manager.\n\nWe have high hopes for your tenure and believe you can lead this club to glory. Your first task will be to review the squad and prepare a tactical plan for the upcoming season.\n\nWe wish you the best of luck.",
         "body1": "On behalf of the entire {{team}} family, we are thrilled to announce your appointment as manager.\n\nThe fans are eager to see your vision for the team. Please take time to assess the squad, review our financial position, and set your tactical approach.\n\nThe board stands behind you.",
-        "body2": "Welcome to {{team}}! The supporters and staff are excited about the future under your guidance.\n\nWe recommend you start by reviewing your squad's strengths and weaknesses, then set up your preferred formation and training regime.\n\nThe upcoming season will be a true test — make us proud.",
+        "body2": "Welcome to {{team}}! The supporters and staff are excited about the future under your guidance.\n\nWe recommend you start by reviewing your squad's strengths and weaknesses, then set up your preferred formation and training regime.\n\nThe upcoming season will be a true test \u2014 make us proud.",
         "actionReview": "Review Squad",
         "actionThank": "Thank the Board"
       },
       "schedule": {
         "subject": "Season Schedule Released",
         "body0": "The {{league}} schedule has been released. The season kicks off on {{start}}.\n\nReview the fixture list and ensure your squad is ready for the challenges ahead. Pre-season preparation will be crucial.",
-        "body1": "Fixture list confirmed! The {{league}} season begins on {{start}}.\n\nStudy the opening fixtures carefully — a strong start can set the tone for the whole campaign. Make sure your key players are match-fit.",
+        "body1": "Fixture list confirmed! The {{league}} season begins on {{start}}.\n\nStudy the opening fixtures carefully \u2014 a strong start can set the tone for the whole campaign. Make sure your key players are match-fit.",
         "actionView": "View Fixtures"
       },
       "preMatch": {
         "subject": "Upcoming: vs {{opponent}} ({{venue}})",
         "body0": "Your {{venue}} match against {{opponent}} is coming up on {{matchDate}}.\n\nMatchday {{matchday}} of the Premier Division. Make sure your starting XI is in good shape and your tactics are set.\n\nMake the most of playing at {{venue}}.",
-        "body1": "Reminder: you face {{opponent}} {{venue}} on {{matchDate}}.\n\nThis is Matchday {{matchday}} — review your squad fitness and consider any tactical adjustments.",
+        "body1": "Reminder: you face {{opponent}} {{venue}} on {{matchDate}}.\n\nThis is Matchday {{matchday}} \u2014 review your squad fitness and consider any tactical adjustments.",
         "actionTactics": "Set Tactics",
         "actionScout": "Scout Opponent",
         "body0Home": "Your home match against {{opponent}} is coming up on {{matchDate}}.\n\nMatchday {{matchday}} of the Premier Division. Make sure your starting XI is in good shape and your tactics are set.\n\nHome advantage could be key in this one.",
         "body0Away": "Your away match against {{opponent}} is coming up on {{matchDate}}.\n\nMatchday {{matchday}} of the Premier Division. Make sure your starting XI is in good shape and your tactics are set.\n\nMatching their intensity away from home could be key in this one.",
-        "body1Home": "Reminder: you face {{opponent}} at home in 3 days ({{matchDate}}).\n\nThis is Matchday {{matchday}} — review your squad fitness and consider any tactical adjustments. The fans will be behind you at home.",
-        "body1Away": "Reminder: you face {{opponent}} away in 3 days ({{matchDate}}).\n\nThis is Matchday {{matchday}} — review your squad fitness and consider any tactical adjustments. Away form will be tested — pack your strongest lineup."
+        "body1Home": "Reminder: you face {{opponent}} at home in 3 days ({{matchDate}}).\n\nThis is Matchday {{matchday}} \u2014 review your squad fitness and consider any tactical adjustments. The fans will be behind you at home.",
+        "body1Away": "Reminder: you face {{opponent}} away in 3 days ({{matchDate}}).\n\nThis is Matchday {{matchday}} \u2014 review your squad fitness and consider any tactical adjustments. Away form will be tested \u2014 pack your strongest lineup."
       },
       "matchResult": {
         "subject": {
@@ -1971,26 +1973,26 @@
           "draw": "Draw: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}"
         },
         "body": {
-          "victory0": "Full time: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nAn excellent result! The team put in a strong performance. Matchday {{matchday}} — keep this momentum going.",
+          "victory0": "Full time: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nAn excellent result! The team put in a strong performance. Matchday {{matchday}} \u2014 keep this momentum going.",
           "victory1": "Final whistle: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nThree points in the bag! The lads showed great character out there. Matchday {{matchday}} complete.",
-          "defeat0": "Full time: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nA disappointing result. We'll need to regroup and work on the areas that let us down. Matchday {{matchday}} — there's still time to turn things around.",
-          "defeat1": "Final score: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nNot the result we wanted. Matchday {{matchday}} — the board will want to see improvement. Review what went wrong and prepare for the next challenge.",
+          "defeat0": "Full time: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nA disappointing result. We'll need to regroup and work on the areas that let us down. Matchday {{matchday}} \u2014 there's still time to turn things around.",
+          "defeat1": "Final score: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nNot the result we wanted. Matchday {{matchday}} \u2014 the board will want to see improvement. Review what went wrong and prepare for the next challenge.",
           "draw": "Full time: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nA point earned in Matchday {{matchday}}. Depending on results elsewhere, this could be valuable. The team fought hard but couldn't find a winner."
         },
         "actionStandings": "View Standings"
       },
       "staffAdvice": {
-        "subject": "Staff Report — Coaching Vacancies",
-        "body": "Boss, I've had a look at the staff situation at {{team}} and wanted to flag a few things:\n\n• A good Coach will significantly improve training effectiveness — your players will develop faster.\n• A qualified Physio helps with injury prevention and speeds up recovery between matches.\n• Our Scouts can help identify transfer targets and assess opponents.\n\nI'd strongly recommend filling any vacancies before the season starts. You can find available staff in the Staff section.\n\nCheck it out when you get a chance.",
+        "subject": "Staff Report \u2014 Coaching Vacancies",
+        "body": "Boss, I've had a look at the staff situation at {{team}} and wanted to flag a few things:\n\n\u2022 A good Coach will significantly improve training effectiveness \u2014 your players will develop faster.\n\u2022 A qualified Physio helps with injury prevention and speeds up recovery between matches.\n\u2022 Our Scouts can help identify transfer targets and assess opponents.\n\nI'd strongly recommend filling any vacancies before the season starts. You can find available staff in the Staff section.\n\nCheck it out when you get a chance.",
         "actionView": "View Staff"
       },
       "boardExpect": {
-        "subject": "{{team}} — Season Objectives",
-        "body": "The board has set the following expectations for this season:\n\n• Finish in the top half of the table\n• Maintain financial stability\n• Develop young talent from the academy\n\nMeeting these objectives will strengthen your position. Failure to meet minimum expectations may result in a review of your tenure.\n\nWe trust in your abilities.",
+        "subject": "{{team}} \u2014 Season Objectives",
+        "body": "The board has set the following expectations for this season:\n\n\u2022 Finish in the top half of the table\n\u2022 Maintain financial stability\n\u2022 Develop young talent from the academy\n\nMeeting these objectives will strengthen your position. Failure to meet minimum expectations may result in a review of your tenure.\n\nWe trust in your abilities.",
         "actionAccept": "Accept Objectives"
       },
       "boardObjectives": {
-        "subject": "Season {{season}} — Board Objectives",
+        "subject": "Season {{season}} \u2014 Board Objectives",
         "body": "The board has set the following objectives for this season:\n\n1. Finish in the top {{expectedPos}}\n2. Win at least {{winTarget}} matches\n3. Score at least {{goalsTarget}} goals\n4. Keep wage spending at or below {{financeTarget}}% of the budget\n\nMeeting these targets will improve the board's confidence in your management. Failure to meet expectations may result in reduced budgets or further consequences."
       },
       "financeCritical": {
@@ -1998,7 +2000,7 @@
         "body": "The club is currently {{amount}} in debt. This is an unsustainable situation.\n\nThe board demands immediate action to address the financial crisis. Consider selling players, reducing staff, or finding alternative income.\n\nFailure to resolve this may have serious consequences for your position."
       },
       "financeWarning": {
-        "subject": "Financial Warning — Low Reserves",
+        "subject": "Financial Warning \u2014 Low Reserves",
         "body": "Our financial reserves are running low. At the current burn rate ({{weeklyWages}}/week in wages), we have approximately {{weeksLeft}} weeks of funding remaining.\n\nI'd recommend reviewing the wage bill and exploring ways to boost income."
       },
       "wageOverBudget": {
@@ -2006,7 +2008,7 @@
         "body": "Our annual wage bill ({{annualWages}}) currently exceeds the allocated wage budget ({{wageBudget}}).\n\nWhile we can sustain this in the short term, the board would prefer to see the wage bill brought under control."
       },
       "financeBoardPressure": {
-        "subject": "Board Review — Financial Pressure",
+        "subject": "Board Review \u2014 Financial Pressure",
         "bodyWarning": "The board remains concerned about the club's finances. Confidence in your management has fallen by {{penalty}} points this week.\n\nYou need to improve the wage position and short-term cash outlook before patience wears thinner.",
         "bodyCritical": "The board has reviewed the club's worsening financial position and confidence in your management has fallen by {{penalty}} points this week.\n\nCash reserves and wage commitments are now in a critical state. Immediate corrective action is expected."
       },
@@ -2029,7 +2031,7 @@
         }
       },
       "newSeasonSchedule": {
-        "subject": "Season {{season}} — New Schedule Released",
+        "subject": "Season {{season}} \u2014 New Schedule Released",
         "body": "The schedule for Season {{season}} has been released! The new campaign kicks off in 4 weeks.\n\nUse this break to assess your squad, make any necessary changes, and prepare for the challenges ahead.\n\nGood luck!"
       },
       "fitness": {
@@ -2038,7 +2040,7 @@
           "body": {
             "intense": "Boss, we have a serious fitness crisis. {{criticalCount}} players are in critical condition and at risk of injury:\n\n{{players}}\n\nAverage squad fitness is at {{avgCondition}}%. With the current Intense schedule (6 days training), the squad is being pushed too hard. Switching to a Balanced schedule would give them recovery time.\n\nIf we push them further without rest, injuries are inevitable.",
             "balanced": "Boss, we have a serious fitness crisis. {{criticalCount}} players are in critical condition and at risk of injury:\n\n{{players}}\n\nAverage squad fitness is at {{avgCondition}}%. Even on a Balanced schedule, the squad needs attention. Consider switching to a Light schedule temporarily.\n\nIf we push them further without rest, injuries are inevitable.",
-            "light": "Boss, we have a serious fitness crisis. {{criticalCount}} players are in critical condition and at risk of injury:\n\n{{players}}\n\nAverage squad fitness is at {{avgCondition}}%. The squad is already on a Light schedule — the issue may be high training intensity. Consider reducing intensity.\n\nIf we push them further without rest, injuries are inevitable."
+            "light": "Boss, we have a serious fitness crisis. {{criticalCount}} players are in critical condition and at risk of injury:\n\n{{players}}\n\nAverage squad fitness is at {{avgCondition}}%. The squad is already on a Light schedule \u2014 the issue may be high training intensity. Consider reducing intensity.\n\nIf we push them further without rest, injuries are inevitable."
           }
         },
         "warning": {
@@ -2068,11 +2070,11 @@
             },
             "promiseTime": {
               "label": "Promise more playing time",
-              "description": "Tell them they'll get their chance — bigger morale boost but sets expectations."
+              "description": "Tell them they'll get their chance \u2014 bigger morale boost but sets expectations."
             },
             "workHarder": {
               "label": "Tell them to work harder",
-              "description": "Tough love approach — could backfire or motivate them."
+              "description": "Tough love approach \u2014 could backfire or motivate them."
             }
           },
           "benchComplaint": {
@@ -2086,7 +2088,7 @@
             },
             "proveYourself": {
               "label": "Tell them to prove themselves",
-              "description": "Challenge them to earn their place. Risky — could motivate or frustrate."
+              "description": "Challenge them to earn their place. Risky \u2014 could motivate or frustrate."
             }
           },
           "happyPlayer": {
@@ -2159,12 +2161,12 @@
               "negative": "Player is unsettled and unhappy. Morale {{delta}}"
             },
             "noRenewal": "Player is devastated. Morale {{delta}}. They may affect the dressing room.",
-            "noRenewalWithDressingRoom": "Player is devastated. Morale {{delta}}. They may affect the dressing room. The dressing room mood dips — {{affected}} teammates lose morale."
+            "noRenewalWithDressingRoom": "Player is devastated. Morale {{delta}}. They may affect the dressing room. The dressing room mood dips \u2014 {{affected}} teammates lose morale."
           }
         }
       },
       "sponsor": {
-        "subject": "Sponsorship Offer — {{sponsor}}",
+        "subject": "Sponsorship Offer \u2014 {{sponsor}}",
         "body": "Good news, boss! {{sponsor}} has expressed interest in becoming a sponsor of {{team}}.\n\nThey are offering a weekly payment of {{amount}} over the next 12 weeks in exchange for advertising space at the training ground.\n\nThis seems like a reasonable deal, but it is your call.",
         "options": {
           "accept": {
@@ -2182,20 +2184,20 @@
         }
       },
       "trainingInjury": {
-        "subject": "Injury — {{player}} ({{injury}})",
+        "subject": "Injury \u2014 {{player}} ({{injury}})",
         "body0": "Bad news from the training ground. {{player}} has picked up a {{injury}} during today's session.\n\nThe medical team estimates {{days}} days on the sidelines. We'll monitor the recovery closely.",
         "body1": "Unfortunately, {{player}} went down in training today with a {{injury}}.\n\nInitial assessment: out for approximately {{days}} days. We'll keep you updated on their progress."
       },
       "mediaPositive": {
-        "subject": "Positive Press — {{player}}",
+        "subject": "Positive Press \u2014 {{player}}",
         "body": "The local papers are running a very positive piece on {{player}} today.\n\nThey are highlighting their excellent recent form and commitment to {{team}}. This kind of coverage is great for the player's confidence and the club's image."
       },
       "mediaNegative": {
-        "subject": "Negative Press — {{player}}",
-        "body": "Some unflattering coverage of {{player}} appeared in the tabloids today.\n\nJournalists are questioning their form and commitment to {{team}}. This could affect the player's morale — you might want to have a word."
+        "subject": "Negative Press \u2014 {{player}}",
+        "body": "Some unflattering coverage of {{player}} appeared in the tabloids today.\n\nJournalists are questioning their form and commitment to {{team}}. This could affect the player's morale \u2014 you might want to have a word."
       },
       "intlCallup": {
-        "subject": "International Call-Up — {{player}}",
+        "subject": "International Call-Up \u2014 {{player}}",
         "body": "{{player}} has been called up to the {{nationality}} national team for an upcoming international window.\n\nThis is a great honor for the player and reflects well on the club. They'll be in good spirits when they return, though keep an eye on their fatigue levels."
       },
       "community": {
@@ -2207,11 +2209,11 @@
         "body2": "The club has organized a charity initiative in partnership with a local foundation.\n\n{{team}} continues to build strong ties with the community. The board is pleased with the positive image."
       },
       "moodReport": {
-        "subject": "Dressing Room Report — Mood: {{mood}}",
-        "body": "Here is your weekly dressing room report:\n\n• Overall mood: {{mood}} (avg morale: {{avgMorale}})\n• Players in high spirits (80+): {{highCount}}\n• Players with low morale (<40): {{lowCount}}\n• Total squad: {{total}}"
+        "subject": "Dressing Room Report \u2014 Mood: {{mood}}",
+        "body": "Here is your weekly dressing room report:\n\n\u2022 Overall mood: {{mood}} (avg morale: {{avgMorale}})\n\u2022 Players in high spirits (80+): {{highCount}}\n\u2022 Players with low morale (<40): {{lowCount}}\n\u2022 Total squad: {{total}}"
       },
       "boardConfidence": {
-        "subject": "Board Meeting — Results Under Scrutiny",
+        "subject": "Board Meeting \u2014 Results Under Scrutiny",
         "body0": "The board has called an urgent meeting. Three consecutive defeats have raised serious concerns about the team's direction.\n\n\"We need to see improvement quickly. The fans are restless and results must change.\"\n\nHow do you respond?",
         "body1": "After a string of poor results, the chairman has summoned you for a difficult conversation.\n\n\"We backed you with resources and time. The results simply aren't good enough. What's your plan?\"\n\nChoose your response carefully.",
         "options": {
@@ -2235,9 +2237,9 @@
         }
       },
       "fanPetition": {
-        "subject0": "Fan Petition — More Attacking Football",
-        "subject1": "Fan Petition — Give Youth a Chance",
-        "subject2": "Fan Open Letter — Transparency",
+        "subject0": "Fan Petition \u2014 More Attacking Football",
+        "subject1": "Fan Petition \u2014 Give Youth a Chance",
+        "subject2": "Fan Open Letter \u2014 Transparency",
         "body0": "A group of {{team}} supporters has organized a petition calling for more attacking football.\n\n\"We pay good money to watch exciting football. We want to see the team go forward and entertain us!\"\n\nOver 500 signatures so far. How do you respond?",
         "body1": "Supporters of {{team}} have started a campaign urging you to give more opportunities to young players from the academy.\n\n\"The future of our club depends on developing homegrown talent. Stop overlooking the kids!\"\n\nIt's getting traction on social media. What's your response?",
         "body2": "An open letter from the {{team}} Supporters Trust has been published, asking for more transparency from the management.\n\n\"We want to understand the club's vision. Where are we heading? What's the long-term plan?\"\n\nThe local press is covering it. How do you handle this?",
@@ -2248,7 +2250,7 @@
           },
           "ignoreFans": {
             "label": "Focus on football",
-            "description": "Politely decline — football decisions stay in the dressing room."
+            "description": "Politely decline \u2014 football decisions stay in the dressing room."
           },
           "addressPublicly": {
             "label": "Make a public statement",
@@ -2262,7 +2264,7 @@
         }
       },
       "rivalInterest": {
-        "subject": "Transfer Rumour — {{player}} linked with {{rival}}",
+        "subject": "Transfer Rumour \u2014 {{player}} linked with {{rival}}",
         "body0": "We've received word that {{rival}} have been making enquiries about {{player}}.\n\nTheir scouts were spotted at our last few matches, and our sources suggest they may approach with a formal offer soon.\n\nHow would you like us to respond if they make contact?",
         "body1": "The press are reporting that {{player}} is a target for {{rival}}.\n\nAccording to sources, the player has attracted attention after their recent performances. No formal bid yet, but it's only a matter of time.\n\nWhat's your stance?",
         "options": {
@@ -2286,24 +2288,24 @@
         }
       },
       "moraleCrisis": {
-        "subject": "{{player}} — Morale Crisis",
-        "body0": "Boss, {{player}} has asked for a private meeting. They seem really down lately and want to talk about their situation at the club.\n\nTheir morale is at {{morale}} — you should address this before it affects the dressing room.",
+        "subject": "{{player}} \u2014 Morale Crisis",
+        "body0": "Boss, {{player}} has asked for a private meeting. They seem really down lately and want to talk about their situation at the club.\n\nTheir morale is at {{morale}} \u2014 you should address this before it affects the dressing room.",
         "body1": "{{player}} has been looking dejected in training. They've requested a chat with you about their current state of mind.\n\nMorale: {{morale}}. How you handle this could make or break their confidence."
       },
       "benchComplaint": {
-        "subject": "{{player}} — Wants More Game Time",
+        "subject": "{{player}} \u2014 Wants More Game Time",
         "body0": "Boss, {{player}} has come to see you. They're frustrated about their lack of game time in recent matches and want to know what they need to do to get back in the team.\n\n\"I feel like I've been training well, but I'm not getting a chance to show it on the pitch.\"",
         "body1": "{{player}} knocked on your office door looking unhappy. They haven't featured in the last few matches and want answers.\n\n\"I came to this club to play football. If I'm not in your plans, I'd rather you tell me straight.\""
       },
       "happyPlayer": {
-        "subject": "{{player}} — Feeling Great",
+        "subject": "{{player}} \u2014 Feeling Great",
         "body0": "{{player}} stopped by your office with a big smile. They're feeling great about their form and the team's direction.\n\n\"Just wanted to say I'm really enjoying my football right now, boss. The mood in the dressing room is fantastic.\"",
         "body1": "Your assistant mentions that {{player}} has been in excellent spirits lately. They approached you after training.\n\n\"Boss, I'm loving every minute here. Keep things going like this and I'll run through walls for you.\""
       },
       "contractConcern": {
-        "subject": "{{player}} — Contract Running Down",
+        "subject": "{{player}} \u2014 Contract Running Down",
         "body0": "{{player}} has approached you regarding their contract situation. With only {{days}} days remaining on their deal, they want to know where they stand.\n\n\"Boss, my contract is running down. I need to know if I'm part of your plans going forward or if I should start looking elsewhere.\"",
-        "body1": "Your assistant flags that {{player}}'s contract expires in roughly {{months}} month(s). The player has been asking around the dressing room about their future.\n\nIt might be wise to have a conversation before they become unsettled — or before other clubs start circling."
+        "body1": "Your assistant flags that {{player}}'s contract expires in roughly {{months}} month(s). The player has been asking around the dressing room about their future.\n\nIt might be wise to have a conversation before they become unsettled \u2014 or before other clubs start circling."
       },
       "takeoverContractReview": {
         "subject": "Assistant Manager - Contract Review",
@@ -2326,12 +2328,12 @@
         "body": "{{player}} has joined {{team}} as a free agent on a {{years}}-year contract."
       },
       "delegatedRenewals": {
-        "subject": "Assistant Report — Contract Renewals",
+        "subject": "Assistant Report \u2014 Contract Renewals",
         "body": "Boss, I went through our renewal list at {{team}}. {{successes}} completed, {{stalled}} still pending, {{failures}} failed.",
         "case": {
           "successful": "Completed: {{player}} agreed to {{years}} year(s) on {{wage}}/wk.",
-          "stalled": "Still difficult: {{player}} — {{detail}}",
-          "failed": "Failed: {{player}} — {{detail}}"
+          "stalled": "Still difficult: {{player}} \u2014 {{detail}}",
+          "failed": "Failed: {{player}} \u2014 {{detail}}"
         },
         "notes": {
           "managerBlocked": "You told me not to reopen contract talks yet.",
@@ -2343,7 +2345,7 @@
         }
       },
       "youthRecruitmentReport": {
-        "subject": "Scout Report — Youth Recruitment",
+        "subject": "Scout Report \u2014 Youth Recruitment",
         "bodyAny": "{{scout}} has completed the latest youth recruitment search for {{team}}. I found {{count}} prospects in the {{regionLabel}} market with a {{objectiveLabel}} profile.\n\nReview the attached cards and decide who should join the academy.",
         "bodyTargeted": "{{scout}} has completed the latest youth recruitment search for {{team}}. I found {{count}} prospects in the {{regionLabel}} market with a {{objectiveLabel}} profile, focused on {{targetLabel}}.\n\nReview the attached cards and decide who should join the academy."
       },
@@ -2377,19 +2379,19 @@
         "body": "Your scout {{scout}} has completed their assessment of {{player}}. Full report available in the scouting section."
       },
       "boardWarning": {
-        "subject": "Board Concern — Performance Review",
+        "subject": "Board Concern \u2014 Performance Review",
         "body": "The board is growing increasingly concerned with recent results at {{team}}. Your position will come under serious review if there is no improvement in the near future."
       },
       "boardFinalWarning": {
-        "subject": "Final Warning — Immediate Improvement Required",
+        "subject": "Final Warning \u2014 Immediate Improvement Required",
         "body": "This is your final warning. The board at {{team}} has lost patience with the current run of results. Unless there is an immediate and significant improvement, we will have no choice but to consider your position."
       },
       "boardFired": {
-        "subject": "Notice of Dismissal — {{team}}",
+        "subject": "Notice of Dismissal \u2014 {{team}}",
         "body": "The board of directors at {{team}} has decided to relieve you of your duties as manager, effective immediately. We thank you for your service and wish you well in your future career."
       },
       "jobOffer": {
-        "subject": "Managerial Vacancy — {{team}}",
+        "subject": "Managerial Vacancy \u2014 {{team}}",
         "body": "The board at {{team}} ({{city}}) is looking for a new manager to lead the club forward. Last season finish: {{league_position}}.\n\nAfter reviewing your credentials, we believe you could be the right fit. Would you be interested in taking on this challenge?",
         "accept": "Accept the position",
         "decline": "Decline the offer",
@@ -2404,7 +2406,7 @@
         "declineDescription": "Continue looking for other opportunities"
       },
       "jobOfferExpired": {
-        "subject": "Position Filled — {{team}}",
+        "subject": "Position Filled \u2014 {{team}}",
         "body": "The vacancy at {{team}} has now been filled, so this offer is no longer available."
       },
       "jobHired": {
@@ -2412,7 +2414,7 @@
         "body": "The board of directors at {{team}} is delighted to welcome you as the new manager. We look forward to working with you and achieving great things together."
       },
       "jobRejection": {
-        "subject": "Application Update — {{team}}",
+        "subject": "Application Update \u2014 {{team}}",
         "body": "Thank you for your interest in the managerial position at {{team}}. After careful consideration, we have decided to pursue other candidates. We wish you the best in your future career."
       },
       "transferComplete": {
@@ -2472,9 +2474,9 @@
       "standings": {
         "headline0": "{{leader}} Lead the Way After Matchday {{matchday}}",
         "headline1": "Premier Division Table: {{leader}} on Top",
-        "headline2": "Standings Update — Matchday {{matchday}}",
+        "headline2": "Standings Update \u2014 Matchday {{matchday}}",
         "body": "After Matchday {{matchday}}, {{leader}} sit at the top of the Premier Division table.\n\nStandings:\n{{standings}}",
-        "entry": "  {{rank}}. {{team}} — {{points}} pts (GD: {{goalDifference}})"
+        "entry": "  {{rank}}. {{team}} \u2014 {{points}} pts (GD: {{goalDifference}})"
       },
       "seasonPreview": {
         "headline0": "Season Preview: {{teamCount}} Teams Battle for Glory",
@@ -2495,7 +2497,7 @@
         "body": "{{toTeam}} have completed the signing of {{player}} from {{fromTeam}} for {{fee}}."
       },
       "transferRoundup": {
-        "headline": "Transfer Roundup — Week of {{weekStart}}",
+        "headline": "Transfer Roundup \u2014 Week of {{weekStart}}",
         "body": "The transfer market stayed busy this week. {{transferCount}} completed deal(s) stood out across the division.\n\n{{deals}}",
         "dealLine": "  {{player}}: {{fromTeam}} -> {{toTeam}} ({{fee}})"
       },
@@ -2506,12 +2508,12 @@
         "bodyPotyOnly": "Season {{season}} ended with {{potyWinner}} ({{potyTeam}}) named Player of the Year, posting an average rating of {{potyRating}}."
       },
       "weeklyDigest": {
-        "headline": "Weekly Digest — Week of {{weekStart}}",
+        "headline": "Weekly Digest \u2014 Week of {{weekStart}}",
         "bodyNoTopScorer": "The latest weekly digest is here. {{leader}} lead the table, and {{storylineCount}} storyline(s) are shaping the division this week.",
         "bodyWithTopScorer": "The latest weekly digest is here. {{leader}} lead the table, while {{topScorer}} heads the scoring charts with {{topScorerGoals}} goal(s). {{storylineCount}} storyline(s) are shaping the division this week."
       },
       "preseasonDigest": {
-        "headline": "Preseason Digest — Week of {{weekStart}}",
+        "headline": "Preseason Digest \u2014 Week of {{weekStart}}",
         "bodyNoResults": "The latest preseason digest is here. Training camps, selection decisions, and transfer business continue across the division as clubs prepare for opening day.{{unbeatenLine}}",
         "bodyWithResults": "The latest preseason digest is here. {{resultCount}} friendly result(s) were played across the division this week, producing {{totalGoals}} goal(s).\n\nResults:\n{{results}}{{unbeatenLine}}",
         "resultLine": "  {{home}} {{homeGoals}} - {{awayGoals}} {{away}}",
@@ -2523,7 +2525,7 @@
       },
       "storyline": {
         "titleRace": {
-          "headline": "Title Race Tightens — {{leader}} Lead {{challenger}} by {{gap}} Point(s)",
+          "headline": "Title Race Tightens \u2014 {{leader}} Lead {{challenger}} by {{gap}} Point(s)",
           "body": "{{leader}} remain in front, but {{challenger}} are only {{gap}} point(s) behind as the title race takes shape."
         },
         "unbeatenStreak": {
@@ -2542,7 +2544,7 @@
       "injuryNews": {
         "headline0": "{{player}} Injury Blow for {{team}}",
         "headline1": "{{player}} Set for Spell on the Sidelines",
-        "headline2": "{{weeksOut}} week(s) — {{team}} Sweating on Key Player",
+        "headline2": "{{weeksOut}} week(s) \u2014 {{team}} Sweating on Key Player",
         "body0Days": "{{team}} have confirmed that {{player}} has picked up an injury and is expected to be sidelined for {{daysOut}} day(s). The club will assess the situation before providing a further update.",
         "body0Weeks": "{{team}} have confirmed that {{player}} has picked up an injury and is expected to be sidelined for around {{weeksOut}} week(s). The club will assess the situation before providing a further update.",
         "body1Days": "{{player}} suffered a setback in training, with the {{team}} player ruled out for {{daysOut}} day(s). The absence will be a significant blow as the season reaches a critical stage.",
@@ -2550,7 +2552,7 @@
       },
       "pressConference": {
         "headlineManagerQuote": "{{team}} Manager: {{quote}}",
-        "headlinePressConf": "Press Conference: \"{{quote}}\" — {{team}} boss",
+        "headlinePressConf": "Press Conference: \"{{quote}}\" \u2014 {{team}} boss",
         "headlinePostMatch": "Post-Match: {{team}} on {{result}}",
         "bodyMultiple": "Speaking after the {{result}} result, the {{team}} manager addressed the press.\n\n{{quotes}}\n\nThe conference covered the result, tactical approach, and what lies ahead for the team.",
         "bodySingle": "The {{team}} manager spoke briefly after the {{result}} result.\n\n\"{{quote}}\"",

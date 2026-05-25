@@ -328,6 +328,16 @@ export default function Settings() {
               onChange={(v) => handleUpdate({ confirm_advance: v })}
             />
           </SettingRow>
+
+          <SettingRow
+            label={t("settings.boardFiring")}
+            description={t("settings.boardFiringDesc")}
+          >
+            <Toggle
+              checked={settings.board_firing_enabled}
+              onChange={(v) => handleUpdate({ board_firing_enabled: v })}
+            />
+          </SettingRow>
         </Section>
 
         {/* ─── Saves & Data ─── */}
