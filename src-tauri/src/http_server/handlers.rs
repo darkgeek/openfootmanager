@@ -362,7 +362,9 @@ pub async fn start_new_game(
     }
     // Randomize AI team training focuses for variety
     let _user_team_id = new_game.manager.team_id.clone().unwrap_or_default();
-    // AI training focus randomisation (to be restored in Phase 2)
+    // Ensure initial training snapshot exists for new games
+    ofm_core::training_report::ensure_initial_snapshot(&mut new_game);
+
     state.state_manager.set_game(new_game.clone());
     state.state_manager.set_stats_state(StatsState::default());
     Ok(Json(new_game))
@@ -527,6 +529,9 @@ pub async fn load_game(
         .map_err(|e| e.to_string())?;
     refresh_game_context(&mut game);
 
+    // Ensure initial training snapshot exists (for old saves or first-time setup)
+    ofm_core::training_report::ensure_initial_snapshot(&mut game);
+    
     // Generate monthly training report if it's the first day of a new month
     if game.clock.current_date.date_naive().day() == 1 {
         info!("[load_game] Generating monthly training report for day 1");
@@ -641,6 +646,9 @@ pub async fn advance_time(
         .get_game(|g| g.clone())
         .ok_or("No active game session".to_string())?;
 
+    // Ensure initial training snapshot exists (for old saves or first-time setup)
+    ofm_core::training_report::ensure_initial_snapshot(&mut game);
+
     // Normal day processing - simulate all matches (including user's)
     let mut captures = Vec::new();
     process_day_with_capture(&mut game, &mut |capture| {
@@ -674,7 +682,10 @@ pub async fn advance_time_with_mode(
     let mut game = state.state_manager
         .get_game(|g| g.clone())
         .ok_or("No active game session".to_string())?;
-    
+
+    // Ensure initial training snapshot exists (for old saves or first-time setup)
+    ofm_core::training_report::ensure_initial_snapshot(&mut game);
+
     let today = game.clock.current_date.format("%Y-%m-%d").to_string();
     
     // Check if it's a match day for the user's team
@@ -783,6 +794,9 @@ pub async fn skip_to_match_day(
     let mut game = state.state_manager
         .get_game(|g| g.clone())
         .ok_or("No active game session")?;
+
+    // Ensure initial training snapshot exists (for old saves or first-time setup)
+    ofm_core::training_report::ensure_initial_snapshot(&mut game);
 
     let user_team_id = game.manager.team_id.clone().ok_or("No team assigned")?;
     let mut days_skipped = 0u32;

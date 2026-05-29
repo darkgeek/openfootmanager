@@ -120,7 +120,9 @@ export default function SquadRosterView({
     [roster],
   );
 
-  const available = roster.filter((player) => !player.injury);
+  const available = roster.filter(
+    (player) => !player.injury && player.suspension_games_remaining === 0,
+  );
   const formation = myTeam.formation || "4-4-2";
   const startingXiIds = buildStartingXIIds(
     available,

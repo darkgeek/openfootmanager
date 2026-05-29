@@ -434,6 +434,7 @@ mod tests {
                 last_played_at: "2026-01-02".to_string(),
                 vacant_team_days_json: "{}".to_string(),
                 world_history_json: "{}".to_string(),
+                training_snapshots: vec![],
             },
         )
         .unwrap();
@@ -546,6 +547,7 @@ mod tests {
                 last_played_at: "2026-01-02".to_string(),
                 vacant_team_days_json: "{}".to_string(),
                 world_history_json: "{}".to_string(),
+                training_snapshots: vec![],
             },
         )
         .unwrap();

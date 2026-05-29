@@ -107,6 +107,7 @@ fn write_game_to_connection(
             last_played_at: now,
             vacant_team_days_json,
             world_history_json,
+            training_snapshots: game.training_snapshots.clone(),
         },
     )?;
 
@@ -291,7 +292,7 @@ impl GamePersistenceReader {
             vacant_team_days: serde_json::from_str(&meta.vacant_team_days_json).unwrap_or_default(),
             world_history: serde_json::from_str(&meta.world_history_json)
                 .unwrap_or_else(|_| WorldHistoryArchive::default()),
-            training_snapshots: vec![],
+            training_snapshots: meta.training_snapshots,
             board_firing_enabled: true,
         };
         ofm_core::season_context::refresh_game_context(&mut game);
@@ -327,6 +328,7 @@ mod tests {
             last_played_at: "2026-07-01T00:00:00+00:00".to_string(),
             vacant_team_days_json: "{}".to_string(),
             world_history_json: "{}".to_string(),
+            training_snapshots: vec![],
         }
     }
 

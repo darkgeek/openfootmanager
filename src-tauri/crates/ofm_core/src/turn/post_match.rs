@@ -1,6 +1,5 @@
 use crate::game::Game;
 use crate::messages;
-use crate::suspensions;
 use domain::league::{
     CompactMatchEvent, CompactMatchReport, CompactTeamMatchStats, FixtureStatus, GoalEvent,
     MatchResult,
@@ -157,8 +156,14 @@ pub fn apply_match_report_with_capture<F>(
     // Update player season stats from the engine report
     apply_player_stats(game, report, home_team_id, away_team_id);
     
-    // Apply suspensions (red cards and accumulated yellows)
-    apply_suspensions_after_match(game, report, home_team_id, away_team_id, !counts_for_standings);
+    // Apply suspensions: decrement existing bans for league matches, then add new ones from cards
+    // NOTE: Only for league matches, not friendlies
+    if counts_for_standings {
+        // First decrement all existing suspensions (injury doesn't affect suspension)
+        decrement_suspensions_for_league_match(game, home_team_id, away_team_id);
+        // Then apply any new suspensions from cards in this match
+        apply_new_card_suspensions(game, report, home_team_id, away_team_id);
+    }
     
     resolve_post_match_promises(game, report, home_team_id, away_team_id);
 
@@ -451,30 +456,51 @@ fn apply_player_stats(
     }
 }
 
-/// Apply suspensions after a league match.
-/// Red card = 1 match ban
+/// Decrement suspension counters for all players in both teams after a league match.
+/// Unlike injury, suspension is NOT served by "playing" — it's served by missing league
+/// matches. So injured players who miss the match still serve their suspension for that
+/// match (the ban counts down regardless of injury status).
+fn decrement_suspensions_for_league_match(
+    game: &mut Game,
+    home_team_id: &str,
+    away_team_id: &str,
+) {
+    for player in game.players.iter_mut() {
+        if player.suspension_games_remaining == 0 {
+            continue;
+        }
+        let Some(ref team_id) = player.team_id else {
+            continue;
+        };
+        if team_id != home_team_id && team_id != away_team_id {
+            continue;
+        }
+        player.suspension_games_remaining -= 1;
+        log::info!(
+            "[suspension] {} (team {}) serves 1 match ban, {} remaining",
+            player.match_name,
+            team_id,
+            player.suspension_games_remaining
+        );
+    }
+}
+
+/// Apply new suspensions from red and yellow cards received in this match.
+/// Red card = 1 match ban per card
 /// 3 accumulated yellow cards = 1 match ban
-/// Friendly matches don't count.
-fn apply_suspensions_after_match(
+/// Does NOT decrement existing suspensions — that's done separately.
+fn apply_new_card_suspensions(
     game: &mut Game,
     report: &engine::MatchReport,
     home_team_id: &str,
     away_team_id: &str,
-    is_friendly: bool,
 ) {
-    if is_friendly {
-        return;
-    }
-
     for player in game.players.iter_mut() {
         let Some(team_id) = player.team_id.clone() else {
             continue;
         };
 
-        // Find player's team in match
-        let is_home_player = team_id == home_team_id;
-        let is_away_player = team_id == away_team_id;
-        if !is_home_player && !is_away_player {
+        if team_id != home_team_id && team_id != away_team_id {
             continue;
         }
 

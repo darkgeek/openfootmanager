@@ -113,6 +113,41 @@ impl AttributeChange {
     }
 }
 
+/// Ensure a training snapshot exists for the user's team, creating one if absent.
+/// Called when loading a game so that the first day-1 after load produces a report
+/// instead of silently creating the first snapshot (which would delay the report by a month).
+pub fn ensure_initial_snapshot(game: &mut Game) {
+    let user_team_id = match &game.manager.team_id {
+        Some(id) => id.clone(),
+        None => return,
+    };
+
+    // Check if a snapshot already exists for this team
+    let has_snapshot = game.training_snapshots.iter().any(|s| s.team_id == user_team_id);
+    if has_snapshot {
+        log::info!("[training_report] Snapshot already exists for team {}, skipping initialization", user_team_id);
+        return;
+    }
+
+    let snapshot_data: Vec<PlayerAttributeSnapshot> = game.players.iter()
+        .filter(|p| p.team_id.as_deref() == Some(&user_team_id))
+        .map(|p| PlayerAttributeSnapshot::from_player(p))
+        .collect();
+
+    if snapshot_data.is_empty() {
+        log::info!("[training_report] No players found for team {}, cannot create initial snapshot", user_team_id);
+        return;
+    }
+
+    let recorded_date = game.clock.current_date.format("%Y-%m-%d").to_string();
+    game.training_snapshots.push(TeamTrainingSnapshot {
+        team_id: user_team_id,
+        recorded_date,
+        players: snapshot_data,
+    });
+    log::info!("[training_report] Created initial snapshot on game load");
+}
+
 /// Generate a monthly training report comparing current attributes with last month's snapshot.
 /// Called from process_day when it's the first day of a new month.
 pub fn generate_monthly_training_report(game: &mut Game) {

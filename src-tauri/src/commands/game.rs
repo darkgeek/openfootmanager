@@ -5,6 +5,7 @@ use chrono::{Datelike, Duration, TimeZone, Utc};
 
 use db::{save_index::SaveEntry, save_manager::SaveManager};
 use domain::manager::Manager;
+use domain::message::MessageCategory;
 use domain::stats::StatsState;
 use ofm_core::clock::GameClock;
 use ofm_core::game::Game;
@@ -667,6 +668,44 @@ pub async fn exit_to_menu(
     state.clear_save_id();
 
     Ok(())
+}
+
+/// Debug command: Get training report status
+#[tauri::command]
+pub async fn debug_training_report_status(
+    state: State<'_, StateManager>,
+) -> Result<TrainingReportDebugInfo, String> {
+    let game = state
+        .get_game(|g: &Game| g.clone())
+        .ok_or("No active game session")?;
+
+    Ok(TrainingReportDebugInfo {
+        current_date: game.clock.current_date.format("%Y-%m-%d").to_string(),
+        snapshot_count: game.training_snapshots.len(),
+        snapshots: game.training_snapshots.iter().map(|s| SnapshotInfo {
+            team_id: s.team_id.clone(),
+            recorded_date: s.recorded_date.clone(),
+            player_count: s.players.len(),
+        }).collect(),
+        training_message_count: game.messages.iter()
+            .filter(|m| m.category == MessageCategory::Training)
+            .count(),
+    })
+}
+
+#[derive(serde::Serialize)]
+pub struct TrainingReportDebugInfo {
+    pub current_date: String,
+    pub snapshot_count: usize,
+    pub snapshots: Vec<SnapshotInfo>,
+    pub training_message_count: usize,
+}
+
+#[derive(serde::Serialize)]
+pub struct SnapshotInfo {
+    pub team_id: String,
+    pub recorded_date: String,
+    pub player_count: usize,
 }
 
 #[cfg(test)]

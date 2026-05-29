@@ -23,7 +23,7 @@ export function EventFeed({
           </p>
         </div>
       ) : (
-        events.map((evt, i) => {
+        events.slice().reverse().map((evt, i) => {
           const display = getEventDisplay(evt);
           const isHome = evt.side === "Home";
           return (

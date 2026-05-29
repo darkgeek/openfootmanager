@@ -82,13 +82,6 @@ where
     crate::training::ai_manage_team_condition(game);
     crate::ai_hiring::update_ai_manager_satisfaction(game);
 
-    // Process suspension reductions (decrement after each day passes)
-    for player in game.players.iter_mut() {
-        if player.suspension_games_remaining > 0 {
-            player.suspension_games_remaining -= 1;
-        }
-    }
-
     news::generate_weekly_digest_news(game, &today);
     news::generate_pre_match_messages(game, &today);
 
@@ -135,6 +128,11 @@ pub fn finish_live_match_day(game: &mut Game) {
     crate::firing::check_manager_firing(game);
     crate::ai_hiring::process_vacant_ai_clubs(game);
     crate::job_offers::check_job_offers(game);
+
+    // Monthly training report (in case the 1st of the month is a match day)
+    if game.clock.current_date.date_naive().day() == 1 {
+        crate::training_report::generate_monthly_training_report(game);
+    }
 
     game.clock.advance_days(1);
     crate::season_context::refresh_game_context(game);
