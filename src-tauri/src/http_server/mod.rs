@@ -157,6 +157,9 @@ pub async fn start_server(port: u16) -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/get_youth_recommendations", post(get_youth_recommendations))
         .route("/api/recruit_youth_player", post(recruit_youth_player))
 
+        // Rescue (re-hire after bug-induced firing)
+        .route("/api/rescue_manager", post(rescue_manager))
+
         // Health check
         .route("/api/health", get(health_check))
 

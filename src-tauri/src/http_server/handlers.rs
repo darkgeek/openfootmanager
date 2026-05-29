@@ -1676,6 +1676,14 @@ pub async fn advance_to_next_season(State(state): State<AppState>) -> Result<Jso
 
     state.state_manager.set_game(game.clone());
 
+    if game.manager.team_id.is_none() {
+        return Ok(Json(serde_json::json!({
+            "action": "fired",
+            "game": game,
+            "summary": summary,
+        })));
+    }
+
     let response = serde_json::json!({
         "game": game,
         "summary": summary,
@@ -2711,4 +2719,178 @@ pub async fn reassign_youth_scouting(
     
     state.state_manager.set_game(game.clone());
     Ok(Json(game))
+}
+
+/// Rescue command: re-hire the manager to their most recent team.
+/// Useful when the player was fired before "Disable Board Firing" was working.
+/// Finds the last career entry where end_date is set (i.e., the manager was fired),
+/// clears the end_date, re-assigns the manager to that team, and saves.
+pub async fn rescue_manager(
+    State(state): State<AppState>,
+    Json(params): Json<Value>,
+) -> Result<Json<Value>, String> {
+    println!("[rescue_manager] Called");
+
+    let mut game = match state.state_manager.get_game(|g| g.clone()) {
+        Some(g) => g,
+        None => {
+            println!("[rescue_manager] ERROR: No active game session");
+            return Err("No active game session".to_string());
+        }
+    };
+
+    println!("[rescue_manager] manager.team_id={:?}, career_history.len()={}", 
+        game.manager.team_id, game.manager.career_history.len());
+
+    // Check if already has a team
+    if game.manager.team_id.is_some() {
+        println!("[rescue_manager] Manager already has a team, nothing to do");
+        return Ok(Json(serde_json::json!({
+            "message": "already_employed",
+            "game": game
+        })));
+    }
+
+    // Try to find team_id from: parameter, career_history, or search by name
+    let requested_team_id = params.get("team_id")
+        .or_else(|| params.get("teamId"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let requested_team_name = params.get("team_name")
+        .or_else(|| params.get("teamName"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    println!("[rescue_manager] Requested: team_id={:?}, team_name={:?}", 
+        requested_team_id, requested_team_name);
+
+    // Build candidate team IDs to try
+    let mut candidate_ids: Vec<String> = Vec::new();
+
+    // 1. From career history (entries with end_date set = was fired from)
+    for e in &game.manager.career_history {
+        if e.end_date.is_some() {
+            candidate_ids.push(e.team_id.clone());
+        }
+    }
+
+    // 2. manager.team_id (may still be set mid-season)
+    if let Some(ref tid) = game.manager.team_id {
+        candidate_ids.push(tid.clone());
+    }
+
+    // 3. From request parameters
+    if let Some(ref tid) = requested_team_id {
+        candidate_ids.push(tid.clone());
+    }
+
+    // 4. Search by team name if provided
+    if let Some(ref name) = requested_team_name {
+        for team in &game.teams {
+            if team.name.contains(name) || team.short_name.contains(name) {
+                candidate_ids.push(team.id.clone());
+            }
+        }
+    }
+
+    // Remove duplicates, keep order
+    let mut seen = std::collections::HashSet::new();
+    candidate_ids.retain(|id| seen.insert(id.clone()));
+
+    println!("[rescue_manager] Candidate team IDs: {:?}", candidate_ids);
+
+    // First try candidates in order
+    let mut team_id: Option<String> = None;
+    for tid in &candidate_ids {
+        if game.teams.iter().any(|t| t.id == *tid) {
+            team_id = Some(tid.clone());
+            break;
+        }
+    }
+
+    // If no candidate found, try searching all teams by keywords
+    if team_id.is_none() {
+        // Print all available teams so user can pick
+        println!("[rescue_manager] Available teams:");
+        for team in &game.teams {
+            println!("  - {} ({}) manager={:?}", team.name, team.id, team.manager_id);
+        }
+
+        // Try Chinese team names
+        let keywords = ["浙江", "FC", "Zhejiang"];
+        for kw in &keywords {
+            if let Some(team) = game.teams.iter().find(|t| t.name.contains(*kw)) {
+                println!("[rescue_manager] Found team by keyword '{}': {} ({})", kw, team.name, team.id);
+                team_id = Some(team.id.clone());
+                break;
+            }
+        }
+    }
+
+    let tid = team_id.ok_or_else(|| {
+        println!("[rescue_manager] Could not determine team to rescue to");
+        "请提供 team_id 或 team_name 参数，例如: POST /api/rescue_manager { \"team_name\": \"浙江\" }".to_string()
+    })?;
+
+    let team_name = game.teams.iter()
+        .find(|t| t.id == tid)
+        .map(|t| t.name.clone())
+        .unwrap_or_else(|| "Unknown".to_string());
+
+    println!("[rescue_manager] Re-hiring to: {} ({})", team_name, tid);
+
+    // Close any open career entry (shouldn't exist but just in case)
+    for entry in game.manager.career_history.iter_mut() {
+        if entry.end_date.is_none() && entry.team_id != tid {
+            let today = game.clock.current_date.format("%Y-%m-%d").to_string();
+            entry.end_date = Some(today);
+        }
+    }
+
+    // Create career entry if doesn't exist for this team
+    let has_open_entry = game.manager.career_history
+        .iter()
+        .any(|e| e.team_id == tid && e.end_date.is_none());
+    
+    if !has_open_entry {
+        let today = game.clock.current_date.format("%Y-%m-%d").to_string();
+        game.manager.career_history.push(domain::manager::ManagerCareerEntry {
+            team_id: tid.clone(),
+            team_name: team_name.clone(),
+            start_date: today,
+            end_date: None,
+            matches: 0,
+            wins: 0,
+            draws: 0,
+            losses: 0,
+            best_league_position: None,
+        });
+    }
+
+    // Re-hire the manager
+    game.manager.hire(tid.clone());
+    if let Some(team) = game.teams.iter_mut().find(|t| t.id == tid) {
+        team.manager_id = Some(game.manager.id.clone());
+    }
+
+    state.state_manager.set_game(game.clone());
+
+    // Save the updated game
+    if let Some(save_id) = state.state_manager.get_save_id() {
+        println!("[rescue_manager] Saving game (save_id={})", save_id);
+        if let Ok(mut sm) = state.save_manager.lock() {
+            match sm.save_game(&game, &save_id) {
+                Ok(_) => println!("[rescue_manager] Save successful"),
+                Err(e) => println!("[rescue_manager] Save failed: {}", e),
+            }
+        }
+    } else {
+        println!("[rescue_manager] No save_id found, skipping save");
+    }
+
+    println!("[rescue_manager] Success!");
+    Ok(Json(serde_json::json!({
+        "message": "rescued",
+        "game": game
+    })))
 }

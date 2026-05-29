@@ -1,5 +1,6 @@
 use log::info;
 use ofm_core::currency::{self, CurrencyDefinition};
+use ofm_core::state::StateManager;
 use tauri::Manager as TauriManager;
 
 const SETTINGS_LOAD_FAILED_ERROR: &str = "be.error.settings.loadFailed";
@@ -110,16 +111,35 @@ pub fn get_settings(app_handle: tauri::AppHandle) -> Result<AppSettingsResponse,
 }
 
 #[tauri::command]
-pub fn save_settings(app_handle: tauri::AppHandle, settings: AppSettings) -> Result<(), String> {
+pub fn save_settings(
+    app_handle: tauri::AppHandle,
+    state: tauri::State<'_, StateManager>,
+    sm_state: tauri::State<'_, crate::SaveManagerState>,
+    settings: AppSettings,
+) -> Result<(), String> {
     let settings = validate_settings(settings)?;
     info!(
-        "[cmd] save_settings: theme={}, lang={}",
-        settings.theme, settings.language
+        "[cmd] save_settings: theme={}, lang={}, board_firing_enabled={}",
+        settings.theme, settings.language, settings.board_firing_enabled
     );
     let path = settings_path(&app_handle, SETTINGS_SAVE_FAILED_ERROR)?;
     let json = serde_json::to_string_pretty(&settings)
         .map_err(|_| SETTINGS_SAVE_FAILED_ERROR.to_string())?;
-    std::fs::write(&path, json).map_err(|_| SETTINGS_SAVE_FAILED_ERROR.to_string())
+    std::fs::write(&path, json).map_err(|_| SETTINGS_SAVE_FAILED_ERROR.to_string())?;
+
+    // If a game is currently active, apply the new board_firing_enabled to it
+    // and save the updated game so the change persists.
+    if let Some(mut game) = state.get_game(|g| g.clone()) {
+        game.board_firing_enabled = settings.board_firing_enabled;
+        state.set_game(game.clone());
+        if let Some(save_id) = state.get_save_id() {
+            if let Ok(mut sm) = sm_state.0.lock() {
+                let _ = sm.save_game(&game, &save_id);
+            }
+        }
+    }
+
+    Ok(())
 }
 
 #[tauri::command]

@@ -1,4 +1,5 @@
 use log::info;
+use tauri::Manager as TauriManager;
 use tauri::State;
 
 use chrono::{Datelike, Duration, TimeZone, Utc};
@@ -551,6 +552,7 @@ pub async fn start_new_game(
 /// Step 2: User picks a team. Assigns manager, generates welcome message, saves to DB.
 #[tauri::command]
 pub async fn select_team(
+    app_handle: tauri::AppHandle,
     state: State<'_, StateManager>,
     sm_state: State<'_, SaveManagerState>,
     team_id: String,
@@ -559,6 +561,18 @@ pub async fn select_team(
     let mut game = state
         .get_game(|g: &Game| g.clone())
         .ok_or("be.error.noActiveGameSession".to_string())?;
+
+    // Apply board_firing_enabled from settings.json
+    if let Ok(dir) = app_handle.path().app_data_dir() {
+        let settings_path = dir.join("settings.json");
+        if settings_path.exists() {
+            if let Ok(json) = std::fs::read_to_string(&settings_path) {
+                if let Ok(settings) = serde_json::from_str::<crate::commands::settings::AppSettings>(&json) {
+                    game.board_firing_enabled = settings.board_firing_enabled;
+                }
+            }
+        }
+    }
     let current_stats_state = state
         .get_stats_state(|stats| stats.clone())
         .unwrap_or_default();
@@ -599,6 +613,7 @@ pub async fn delete_save(
 
 #[tauri::command]
 pub async fn load_game(
+    app_handle: tauri::AppHandle,
     state: State<'_, StateManager>,
     sm_state: State<'_, SaveManagerState>,
     save_id: String,
@@ -609,6 +624,18 @@ pub async fn load_game(
     let stats_state = sm.load_stats_state(&save_id)?;
     ofm_core::ai_hiring::seed_ai_managers(&mut game);
     ofm_core::season_context::refresh_game_context(&mut game);
+
+    // Apply board_firing_enabled from settings.json
+    if let Ok(dir) = app_handle.path().app_data_dir() {
+        let settings_path = dir.join("settings.json");
+        if settings_path.exists() {
+            if let Ok(json) = std::fs::read_to_string(&settings_path) {
+                if let Ok(settings) = serde_json::from_str::<crate::commands::settings::AppSettings>(&json) {
+                    game.board_firing_enabled = settings.board_firing_enabled;
+                }
+            }
+        }
+    }
 
     let mgr_name = format!("{} {}", game.manager.first_name, game.manager.last_name);
 
