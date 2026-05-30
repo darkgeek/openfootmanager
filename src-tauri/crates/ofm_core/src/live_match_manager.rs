@@ -12,7 +12,9 @@ use crate::game::Game;
 use domain::league::StandingEntry;
 use domain::team::MatchRoles;
 use engine::ai::{self, AiProfile};
-use engine::{LiveMatchState, MatchCommand, MatchConfig, MatchSnapshot, MinuteResult, Side};
+use engine::{
+    LiveMatchState, MatchCommand, MatchConfig, MatchEvent, MatchSnapshot, MinuteResult, Side,
+};
 
 const LIVE_MATCH_NO_LEAGUE_ERROR: &str = "be.error.liveMatch.noLeague";
 const LIVE_MATCH_FIXTURE_NOT_FOUND_ERROR: &str = "be.error.liveMatch.fixtureNotFound";
@@ -112,7 +114,7 @@ impl LiveMatchSession {
 
         // Apply AI decisions for non-user sides (only during playing phases)
         if !result.is_finished {
-            self.apply_ai_decisions();
+            self.apply_ai_decisions(&result.events);
         }
 
         result
@@ -158,10 +160,16 @@ impl LiveMatchSession {
         self.match_state.is_finished()
     }
 
-    fn apply_ai_decisions(&mut self) {
+    fn apply_ai_decisions(&mut self, events: &[MatchEvent]) {
         // AI for home team (if not user-controlled)
         if self.user_side != Some(Side::Home) {
-            let cmds = ai::ai_decide(&self.match_state, Side::Home, &self.ai_home, &mut self.rng);
+            let cmds = ai::ai_decide(
+                &self.match_state,
+                Side::Home,
+                &self.ai_home,
+                &mut self.rng,
+                events,
+            );
             for cmd in cmds {
                 let _ = self.match_state.apply_command(cmd);
             }
@@ -169,7 +177,13 @@ impl LiveMatchSession {
 
         // AI for away team (if not user-controlled)
         if self.user_side != Some(Side::Away) {
-            let cmds = ai::ai_decide(&self.match_state, Side::Away, &self.ai_away, &mut self.rng);
+            let cmds = ai::ai_decide(
+                &self.match_state,
+                Side::Away,
+                &self.ai_away,
+                &mut self.rng,
+                events,
+            );
             for cmd in cmds {
                 let _ = self.match_state.apply_command(cmd);
             }

@@ -1,7 +1,10 @@
 use rand::{Rng, RngExt};
 
+use crate::event::{EventType, MatchEvent};
 use crate::live_match::{LiveMatchState, MatchCommand, MatchPhase};
 use crate::types::{PlayStyle, PlayerData, Position, Side};
+
+use std::collections::HashSet;
 
 // ---------------------------------------------------------------------------
 // AI Manager profile — drives decision-making style
@@ -35,6 +38,7 @@ pub fn ai_decide<R: Rng>(
     side: Side,
     profile: &AiProfile,
     rng: &mut R,
+    events: &[MatchEvent],
 ) -> Vec<MatchCommand> {
     let mut commands = Vec::new();
 
@@ -58,7 +62,7 @@ pub fn ai_decide<R: Rng>(
 
     if subs_made < snap.max_subs
         && let Some(sub_cmd) =
-            consider_substitution(match_state, side, profile, minute, subs_made, rng)
+            consider_substitution(match_state, side, profile, minute, subs_made, rng, events)
     {
         commands.push(sub_cmd);
     }
@@ -82,6 +86,7 @@ fn consider_substitution<R: Rng>(
     minute: u8,
     subs_made: u8,
     rng: &mut R,
+    events: &[MatchEvent],
 ) -> Option<MatchCommand> {
     let snap = match_state.snapshot();
     let team = match side {
@@ -92,6 +97,44 @@ fn consider_substitution<R: Rng>(
 
     if bench.is_empty() {
         return None;
+    }
+
+    // --- Priority 1: Injured player substitution ---
+    // If a player on this side was just injured, substitute them immediately
+    let injured_ids: HashSet<&str> = events
+        .iter()
+        .filter(|evt| evt.event_type == EventType::Injury && evt.side == side)
+        .filter_map(|evt| evt.player_id.as_deref())
+        .collect();
+
+    for injured_id in &injured_ids {
+        if snap.sent_off.contains(*injured_id) {
+            continue;
+        }
+
+        // Find injured player's position (prefer exact match, GK allowed here)
+        let injured_pos = team
+            .players
+            .iter()
+            .find(|p| p.id == **injured_id)
+            .map(|p| p.position);
+
+        if let Some(pos) = injured_pos {
+            // If they're no longer on the pitch, skip
+            if !team.players.iter().any(|p| p.id == **injured_id) {
+                continue;
+            }
+
+            if let Some(replacement) =
+                find_best_bench_replacement(bench, pos, &snap.sent_off)
+            {
+                return Some(MatchCommand::Substitute {
+                    side,
+                    player_off_id: (*injured_id).to_string(),
+                    player_on_id: replacement.id.clone(),
+                });
+            }
+        }
     }
 
     // Determine score differential from this side's perspective

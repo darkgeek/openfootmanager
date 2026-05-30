@@ -633,7 +633,7 @@ fn ai_decide_returns_no_commands_early() {
         reputation: 500,
         experience: 50,
     };
-    let cmds = ai_decide(&state, Side::Home, &profile, &mut rng);
+    let cmds = ai_decide(&state, Side::Home, &profile, &mut rng, &[]);
     // At minute 0, AI shouldn't make decisions
     assert!(cmds.is_empty(), "AI should not act at minute 0");
 }
@@ -654,11 +654,11 @@ fn ai_decide_does_not_crash() {
             break;
         }
 
-        let cmds = ai_decide(&state, Side::Home, &profile, &mut rng);
+        let cmds = ai_decide(&state, Side::Home, &profile, &mut rng, &result.events);
         for cmd in cmds {
             let _ = state.apply_command(cmd);
         }
-        let cmds = ai_decide(&state, Side::Away, &profile, &mut rng);
+        let cmds = ai_decide(&state, Side::Away, &profile, &mut rng, &result.events);
         for cmd in cmds {
             let _ = state.apply_command(cmd);
         }
@@ -685,7 +685,7 @@ fn ai_makes_substitutions_eventually() {
                 break;
             }
 
-            let cmds = ai_decide(&state, Side::Home, &profile, &mut rng);
+            let cmds = ai_decide(&state, Side::Home, &profile, &mut rng, &result.events);
             for cmd in cmds {
                 let _ = state.apply_command(cmd);
             }
