@@ -159,6 +159,7 @@ pub async fn start_server(port: u16) -> Result<(), Box<dyn std::error::Error>> {
 
         // Rescue (re-hire after bug-induced firing)
         .route("/api/rescue_manager", post(rescue_manager))
+        .route("/api/check_game_state", post(check_game_state))
 
         // Health check
         .route("/api/health", get(health_check))

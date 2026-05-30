@@ -551,6 +551,19 @@ pub async fn load_game(
     state.state_manager.set_game(game.clone());
     state.state_manager.set_stats_state(stats_state);
 
+    // Fix inconsistency: if manager.team_id is set but team.manager_id isn't
+    if let Some(ref tid) = game.manager.team_id {
+        let team_has_manager = game.teams.iter()
+            .filter(|t| t.id == *tid)
+            .any(|t| t.manager_id.as_deref() == Some(&game.manager.id));
+        if !team_has_manager {
+            println!("[load_game] Fixing team.manager_id for team={} manager={}", tid, game.manager.id);
+            if let Some(team) = game.teams.iter_mut().find(|t| t.id == *tid) {
+                team.manager_id = Some(game.manager.id.clone());
+            }
+        }
+    }
+
     // Apply board_firing_enabled from settings.json so mid-game setting changes
     // (made in a previous run) are reflected immediately on load.
     if state.settings_path.exists() {
@@ -2721,6 +2734,69 @@ pub async fn reassign_youth_scouting(
     Ok(Json(game))
 }
 
+/// Diagnostic: check current game state for manager/team status.
+pub async fn check_game_state(
+    State(state): State<AppState>,
+) -> Result<Json<Value>, String> {
+    let game = match state.state_manager.get_game(|g| g.clone()) {
+        Some(g) => g,
+        None => return Err("No active game session".to_string()),
+    };
+
+    println!("[check_game_state] manager.id={}, manager.team_id={:?}", 
+        game.manager.id, game.manager.team_id);
+    println!("[check_game_state] manager_id={}", game.manager_id);
+
+    // Find teams whose manager_id matches the user's manager id
+    let matching_teams: Vec<_> = game.teams.iter()
+        .filter(|t| t.manager_id.as_deref() == Some(&game.manager.id) || t.manager_id.as_deref() == Some(&game.manager_id))
+        .collect();
+
+    println!("[check_game_state] Teams matching manager.id: {}", matching_teams.len());
+    for t in &matching_teams {
+        println!("  - {} ({}) manager_id={:?}", t.name, t.id, t.manager_id);
+    }
+
+    // List all teams without a manager
+    let vacant_teams: Vec<_> = game.teams.iter()
+        .filter(|t| t.manager_id.is_none())
+        .collect();
+    println!("[check_game_state] Vacant teams: {}", vacant_teams.len());
+    for t in vacant_teams.iter().take(10) {
+        println!("  - {} ({})", t.name, t.id);
+    }
+
+    Ok(Json(serde_json::json!({
+        "manager": {
+            "id": game.manager.id,
+            "name": game.manager.full_name(),
+            "team_id": game.manager.team_id,
+        },
+        "manager_id_field": game.manager_id,
+        "matching_teams": matching_teams.iter().map(|t| {
+            serde_json::json!({
+                "id": t.id,
+                "name": t.name,
+                "manager_id": t.manager_id,
+            })
+        }).collect::<Vec<_>>(),
+        "vacant_teams_sample": vacant_teams.iter().take(10).map(|t| {
+            serde_json::json!({
+                "id": t.id,
+                "name": t.name,
+            })
+        }).collect::<Vec<_>>(),
+        "career_history": game.manager.career_history.iter().map(|e| {
+            serde_json::json!({
+                "team_id": e.team_id,
+                "team_name": e.team_name,
+                "start_date": e.start_date,
+                "end_date": e.end_date,
+            })
+        }).collect::<Vec<_>>(),
+    })))
+}
+
 /// Rescue command: re-hire the manager to their most recent team.
 /// Useful when the player was fired before "Disable Board Firing" was working.
 /// Finds the last career entry where end_date is set (i.e., the manager was fired),
@@ -2742,11 +2818,37 @@ pub async fn rescue_manager(
     println!("[rescue_manager] manager.team_id={:?}, career_history.len()={}", 
         game.manager.team_id, game.manager.career_history.len());
 
-    // Check if already has a team
-    if game.manager.team_id.is_some() {
-        println!("[rescue_manager] Manager already has a team, nothing to do");
+    // Check if already has a team and team.manager_id is correctly set
+    if let Some(ref current_tid) = game.manager.team_id {
+        let team_has_manager = game.teams.iter()
+            .filter(|t| t.id == *current_tid)
+            .any(|t| t.manager_id.as_deref() == Some(&game.manager.id));
+        
+        if team_has_manager {
+            println!("[rescue_manager] Manager already has a team and team.manager_id is set");
+            return Ok(Json(serde_json::json!({
+                "message": "already_employed",
+                "game": game
+            })));
+        }
+        
+        // manager.team_id is set but team.manager_id is not — fix it!
+        println!("[rescue_manager] manager.team_id={:?} but team.manager_id missing — fixing", current_tid);
+        if let Some(team) = game.teams.iter_mut().find(|t| t.id == *current_tid) {
+            team.manager_id = Some(game.manager.id.clone());
+            println!("[rescue_manager] Fixed team.manager_id for {} ({})", team.name, team.id);
+        }
+        
+        state.state_manager.set_game(game.clone());
+        
+        if let Some(save_id) = state.state_manager.get_save_id() {
+            if let Ok(mut sm) = state.save_manager.lock() {
+                let _ = sm.save_game(&game, &save_id);
+            }
+        }
+        
         return Ok(Json(serde_json::json!({
-            "message": "already_employed",
+            "message": "fixed_team_manager_id",
             "game": game
         })));
     }
@@ -2873,20 +2975,21 @@ pub async fn rescue_manager(
         team.manager_id = Some(game.manager.id.clone());
     }
 
-    state.state_manager.set_game(game.clone());
-
-    // Save the updated game
+    // Save through the normal mechanism
     if let Some(save_id) = state.state_manager.get_save_id() {
-        println!("[rescue_manager] Saving game (save_id={})", save_id);
+        println!("[rescue_manager] Saving (save_id={})", save_id);
         if let Ok(mut sm) = state.save_manager.lock() {
             match sm.save_game(&game, &save_id) {
-                Ok(_) => println!("[rescue_manager] Save successful"),
-                Err(e) => println!("[rescue_manager] Save failed: {}", e),
+                Ok(_) => println!("[rescue_manager] save_game OK"),
+                Err(e) => println!("[rescue_manager] save_game FAILED: {}", e),
             }
         }
     } else {
-        println!("[rescue_manager] No save_id found, skipping save");
+        println!("[rescue_manager] No save_id found");
     }
+    
+    // Always update in-memory state
+    state.state_manager.set_game(game.clone());
 
     println!("[rescue_manager] Success!");
     Ok(Json(serde_json::json!({
